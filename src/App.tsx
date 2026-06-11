@@ -3,6 +3,9 @@ import { lazy, Suspense } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Toaster } from 'sonner';
 
+import { AuthProvider } from '@/components/AuthProvider';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+
 const ListaPage = lazy(() => import('@/pages/ListaPage'));
 const NowyProjektPage = lazy(() => import('@/pages/NowyProjektPage'));
 const ProjektSzczegolyPage = lazy(() => import('@/pages/ProjektSzczegolyPage'));
@@ -19,15 +22,38 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Suspense fallback={null}>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/" element={<ListaPage />} />
-            <Route path="/nowy" element={<NowyProjektPage />} />
-            <Route path="/projekt/:id" element={<ProjektSzczegolyPage />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </Suspense>
+        <AuthProvider>
+          <Suspense fallback={null}>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <ListaPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/nowy"
+                element={
+                  <ProtectedRoute>
+                    <NowyProjektPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/projekt/:id"
+                element={
+                  <ProtectedRoute>
+                    <ProjektSzczegolyPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Suspense>
+        </AuthProvider>
       </BrowserRouter>
       <Toaster position="bottom-right" richColors />
     </QueryClientProvider>
