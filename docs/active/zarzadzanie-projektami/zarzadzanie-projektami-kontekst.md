@@ -1,7 +1,7 @@
 # Kontekst: System zarządzania projektami odzieżowymi — MVP
 
 **Branch:** `feature/zarzadzanie-zamowieniami` (nazwa brancha zachowana dla ciągłości git)
-**Ostatnia aktualizacja:** 2026-06-11 (Faza 2 ukończona)
+**Ostatnia aktualizacja:** 2026-06-11 (poprawki po review Fazy 1 i 2 wykonane)
 
 > ⚠ Koncept zmieniony 2026-06-10: z „zamówień" (pojedynczy status główny, kanban,
 > numery ZAM-XXX, terminy) na „projekty odzieżowe" (4 niezależne flagi, tabela/karty,
@@ -112,6 +112,7 @@ Wszystkie 3 Implementation Units Fazy 1 zrealizowane przez subagentów (strategi
 2. Zaaplikuj migracje 0001→0002→0003 (SQL Editor lub `supabase db push`); zweryfikuj `verify_rls.sql`; potwierdź Realtime dla `projekty`.
 3. Uruchom `node --env-file=.env scripts/verify-rls.mjs` — sukces = exit 0 / „anon SELECT zwrócił 0 wierszy".
 4. Załóż wspólne konto zespołu (email+hasło) w Supabase Auth, przekaż 4 osobom.
+5. **Wyłącz publiczne email signups w Supabase Auth** (dashboard → Authentication → Sign In/Up) — polityki RLS `using(true)` dają pełny CRUD na PII (`kontakt`) każdemu użytkownikowi auth; model wspólnego konta (D3) jest bezpieczny tylko bez otwartej rejestracji (review F1, P3).
 
 ### Faza 2 — Dane + widok główny desktop (ukończona 2026-06-11)
 
@@ -145,9 +146,53 @@ czyste, test 22/22, build OK. **Zgodność ze spec: pełna** — `KATEGORIE`/`OS
   ma pełny CRUD na PII → **operator musi wyłączyć publiczne signups** (model wspólnego konta D3).
 - P3 nity: nazewnictwo boolean bez prefiksu `is/has`; nietestowana gałąź guardu w `LoginPage`.
 
+### Review Fazy 2 (2026-06-11)
+
+Multi-axis code review (Standards + Spec) — raport: `review-faza-2.md`. Gate: **⚠️ KONTYNUUJ
+Z ZASTRZEŻENIAMI** (0× P1, 9× P2 Standards + 1× P2 Spec, ~13× P3). Quality gate zweryfikowany
+na żywo: typecheck/lint czyste, test **69/69**, build OK. **Zgodność ze spec: wysoka** — D5
+(toggle desktop natychmiastowy) i D10 (liczniki z pełnego zbioru aktywnych) zrealizowane
+wiernie; AND filtrów, sortowanie `created_at desc`, opacity 0.4, toast „ROZPISANE: TAK/NIE"
+poprawne. **0 błędnych implementacji.** E2E SKIP (brak `.env`/Supabase, Operator TODO §110).
+
+**Kluczowe wnioski (do naprawy przed/podczas Fazy 3):**
+- **Zod nieużywany na granicy** — `projektSchema` istnieje i jest testowany, ale odpowiedzi
+  z Supabase rzutowane `as Projekt` zamiast `.parse()` (martwy schemat prod, coding-rules §10).
+  Najtańszy fix o największym zysku spójności — usuwa 4× `as`.
+- **LIKE injection** — `szukaj` interpolowany surowo do `ilike` (escapuj `%`/`_` + limit długości).
+- **`onError` re-throw** (6×) — ryzyko unhandled rejection; wymusza obronny `onError: () => {}`
+  u konsumenta. Usunąć `throw`, zostawić toast.
+- **Dedup `KOLUMNY`** — 13-kolumnowy string w 3 plikach → jedna stała.
+- **Brakujące testy nowych jednostek** — `useIsMobile`, `EmptyState`, render `columnLabel`
+  w nagłówku tabeli (coding-rules §2).
+- **Podwójny `useProjektyData`** (D10) — świadomy trade-off, NIE defekt; opcjonalnie filtrować
+  client-side z jednego datasetu przed dorzuceniem kart mobile (U8), by nie utrwalać wzorca.
+- **Scope creep „legalny"** — `archive`/`restore`/`hardDelete` (U10/Faza 4) powstały w U4 —
+  wymienione w checkliście U4, więc dozwolone; delete-layer gotowy zanim istnieje jego UI.
+
+### Poprawki po review Fazy 1 i 2 (2026-06-11)
+
+Wykonane przez 2 subagentów (strategia: **serial** — współdzielony `ProjektTabela.tsx`).
+Quality gate po poprawkach: typecheck ✅, test **85/85** (16 plików; 69 → 85), lint ✅, build ✅.
+
+**feature-builder-data (hooki + granica Zod):**
+- `escapeLike` (escapuje `\`/`%`/`_`) + limit 200 znaków dla `szukaj` przed `ilike` (LIKE injection).
+- `projektSchema.parse(...)` na wszystkich odpowiedziach Supabase — usunięte 4× `as Projekt` (Zod realnie na granicy).
+- Usunięte 6× `throw error` z `onError` mutacji (zostaje toast; UI przez `isError`) + usunięty obronny `onError: () => {}` w `ProjektTabela`. **Świadoma zmiana kontraktu** — test toggleFlaga przepisany z `rejects` na `waitFor(isError)`; rollback + toast nadal asertowane.
+- `PROJEKT_KOLUMNY` w `queryKeys.ts` (dedup 3× stringa kolumn); `onSettled` toggleFlaga invaliduje też `projekt(id)`; explicit return types na hookach danych; usunięte `id as string`.
+- Decyzja: limit `szukaj` przez `slice(0,200)`, nie ZodError — to filtr listy, rzucanie przy wpisywaniu psułoby UX.
+
+**feature-builder-ui (testy komponentów + nity):**
+- Nowe testy: `useIsMobile.test.ts` (4), `EmptyState.test.tsx` (3), `ListaPage.test.tsx` (2 — warianty empty state przez MSW, nie mock hooka), asercja `columnLabel` + disabled-podczas-pending w `ProjektTabela.test.tsx`, gałąź „Podaj email i hasło" w `LoginPage.test.tsx` (przez `fireEvent.submit` — jsdom egzekwuje natywny `required`).
+- Renamy: `handleToggle` → `makeToggleHandler`; booleany z prefiksem `is` (`isSigningOut`, `isLoading`, `isActive`) — w tym **publiczny kontrakt `AuthState.loading` → `isLoading`** (zaktualizowani konsumenci + testy); `import type { MouseEvent }` w FlagBtn.
+- `FlagBtn` w tabeli dostaje `disabled={toggleFlaga.isPending}` — blokuje wszystkie flagi tabeli na czas pojedynczej mutacji (jeden hook na tabelę); per-wiersz granulacja wymagałaby zmiany w hooku — odnotowane na przyszłość.
+
+**Świadomie bez akcji:** podwójny `useProjektyData` (D10 — rewizja przy U8), szerokości kolumn z DESIGN.md (kosmetyka), `useLiczniki`, `szukaj` w queryKeys, `<search>` jsdom warning, async `handleSignOut` bez await. RLS hardening → Operator TODO pkt 5 (wyłączyć publiczne signups). E2E Fazy 1 i 2 nadal SKIP — blokada na Operator TODO §110.
+
 ## Źródła
 - Specyfikacja funkcjonalna: `SPEC_projekty.md` (v5, root)
 - Specyfikacja wizualna: `DESIGN.md` (v5, root)
 - Plan: `docs/active/zarzadzanie-projektami/zarzadzanie-projektami-plan.md`
 - Zadania: `docs/active/zarzadzanie-projektami/zarzadzanie-projektami-zadania.md`
 - Review Fazy 1: `docs/active/zarzadzanie-projektami/review-faza-1.md`
+- Review Fazy 2: `docs/active/zarzadzanie-projektami/review-faza-2.md`

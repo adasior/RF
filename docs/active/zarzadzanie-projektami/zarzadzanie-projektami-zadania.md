@@ -1,7 +1,7 @@
 # Zadania: System zarządzania projektami odzieżowymi — MVP
 
 **Branch:** `feature/zarzadzanie-zamowieniami` (nazwa zachowana dla ciągłości git)
-**Ostatnia aktualizacja:** 2026-06-10
+**Ostatnia aktualizacja:** 2026-06-11 (poprawki po review Fazy 1 i 2 wykonane)
 
 Legenda: `Test:` = scenariusz testowy, `Weryfikacja:` = kryterium weryfikacji,
 `Operator:` = krok poza kodem (człowiek).
@@ -113,9 +113,9 @@ Operator:
 
 **Nity (opcjonalne):**
 
-- [ ] 🟡 [nit] **supabase/migrations/0002_rls_policies.sql** — `using(true)` daje pełny CRUD na PII (`kontakt`) każdemu użytkownikowi Supabase Auth. → Operator: wyłączyć publiczne email signups w Supabase Auth (utwardzenie modelu wspólnego konta D3).
-- [ ] 🟡 [nit] **Header.tsx:11 / AuthProvider.tsx:18,21** — boolean bez prefiksu `is`/`has` (`signingOut`, `loading`, `active`) — coding-rules §7.
-- [ ] 🟡 [nit] **LoginPage.tsx:18** — gałąź „Podaj email i hasło" nietestowana i przesłonięta natywnym `required`; dodać test lub zostawić jako defense-in-depth.
+- [x] 🟡 [nit] **supabase/migrations/0002_rls_policies.sql** — `using(true)` daje pełny CRUD na PII (`kontakt`) każdemu użytkownikowi Supabase Auth. → **Dodane do Operator TODO (kontekst §110 pkt 5):** wyłączyć publiczne email signups w Supabase Auth (utwardzenie modelu wspólnego konta D3). ✅ 2026-06-11
+- [x] 🟡 [nit] **Header.tsx:11 / AuthProvider.tsx:18,21** — boolean bez prefiksu `is`/`has` → zmienione: `isSigningOut` / `isLoading` / `isActive`; `AuthState.loading` → `isLoading` (publiczny kontrakt — zaktualizowano `auth-context.ts`, `ProtectedRoute` + testy). ✅ 2026-06-11
+- [x] 🟡 [nit] **LoginPage.tsx:18** — dodany test gałęzi „Podaj email i hasło" (przez `fireEvent.submit` — jsdom egzekwuje natywny `required`, więc klik nie odpala akcji); auth nie wywołane. ✅ 2026-06-11
 
 ---
 
@@ -170,9 +170,9 @@ Scenariusze testowe:
 
 Weryfikacja:
 - [x] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone
-- [ ] Weryfikacja: [E2E] optimistic zmiana flagi widoczna natychmiast + toast (snapshot przed/po)
-- [ ] Weryfikacja: [E2E] wiersz z 4 flagami true przygaszony (screenshot)
-- [ ] Weryfikacja: [E2E] empty state widoczny przy braku danych
+- [ ] Weryfikacja: [E2E] optimistic zmiana flagi widoczna natychmiast + toast (snapshot przed/po) (SKIP — Agent 5 niedostępny: brak `.env`/Supabase)
+- [ ] Weryfikacja: [E2E] wiersz z 4 flagami true przygaszony (screenshot) (SKIP — Agent 5 niedostępny: brak `.env`/Supabase)
+- [ ] Weryfikacja: [E2E] empty state widoczny przy braku danych (SKIP — Agent 5 niedostępny: brak `.env`/Supabase)
 
 ---
 
@@ -196,7 +196,47 @@ Scenariusze testowe:
 
 Weryfikacja:
 - [x] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone
-- [ ] Weryfikacja: [E2E] liczniki aktualizują się po każdej zmianie flagi; aktywny filtr zawęża listę; reset działa
+- [ ] Weryfikacja: [E2E] liczniki aktualizują się po każdej zmianie flagi; aktywny filtr zawęża listę; reset działa (SKIP — Agent 5 niedostępny: brak `.env`/Supabase)
+
+---
+
+## Do poprawy po review fazy 2
+
+> Review: 2026-06-11 (`review-faza-2.md`). Gate: **⚠️ KONTYNUUJ Z ZASTRZEŻENIAMI** — 0× P1.
+> Quality gate zweryfikowany na żywo: typecheck/lint czyste, test 69/69, build OK.
+> Zgodność ze spec: wysoka (D5/D10 wierne, 0 błędnych implementacji). E2E SKIP (brak `.env`/Supabase).
+
+> ✅ **Poprawki wykonane 2026-06-11** (subagenci: feature-builder-data + feature-builder-ui, serial).
+> Quality gate po poprawkach: typecheck ✅, test **85/85** (16 plików, +16), lint ✅, build ✅.
+
+**Oś Standards — 🟠 P2 (do naprawy):**
+
+- [x] 🟠 [important] **src/hooks/useProjektyData.ts:26** — LIKE injection → helper `escapeLike` (escapuje `\`, `%`, `_`) + przycięcie `szukaj` do 200 znaków (`slice`, nie ZodError — to filtr, nie formularz). Testy: escapowanie metaznaków + limit długości. ✅
+- [x] 🟠 [important] **Zod na granicy** — `projektSchema.array().parse(data ?? [])` / `.parse(data)` w `useProjektyData`/`useProjektData`/`useProjektMutations` (create/update); wszystkie `as Projekt` usunięte. Test: niepoprawny kształt danych z bazy → `isError`. ✅
+- [x] 🟠 [important] **useProjektMutations.ts** — usunięte 6× `throw error` z `onError` (zostaje toast; UI reaguje przez `isError`); usunięty obronny `onError: () => {}` z `ProjektTabela.tsx`. Świadoma zmiana kontraktu: test toggleFlaga przepisany z `rejects` na `waitFor(isError)` — rollback + toast nadal asertowane. ✅
+- [x] 🟠 [important] **Dedup `KOLUMNY`** — `export const PROJEKT_KOLUMNY` w `src/lib/queryKeys.ts` (współdzielony moduł warstwy query), import w 3 hookach. ✅
+- [x] 🟠 [important] **useProjektMutations onSettled** — toggleFlaga invaliduje dodatkowo `queryKeys.projekt(id)`. Test: `getQueryState(...).isInvalidated`. ✅
+- [x] 🟠 [important] **ListaPage.tsx:24,28** — podwójny `useProjektyData` — **decyzja: bez zmian** (świadomy trade-off D10, nie defekt); rewizja wzorca przy U8 (karty mobile). ✅ odnotowane
+- [x] 🟠 [important] **ProjektTabela.test.tsx** — asercja nagłówka `columnLabel` („Przesłany haft/sito") dodana. ✅
+- [x] 🟠 [important] **useIsMobile.ts** — `useIsMobile.test.ts` dodany (4 testy: matches true/false, reaktywność na `change`, `removeEventListener` na unmount). ✅
+- [x] 🟠 [important] **EmptyState.tsx** — `EmptyState.test.tsx` dodany (3 testy: oba warianty + klik CTA → `onAction`). ✅
+
+**Oś Spec — 🟠 P2 (odnotowane, scope creep „legalny" — bez akcji):**
+
+- [x] 🟠 [important] **useProjektMutations.ts** — `archive`/`restore`/`hardDelete` (U10/Faza 4) powstały w U4 — dozwolone wyprzedzenie (checklist U4 je wymienia). Odnotowane w kontekście; bez akcji. ✅
+
+**Nity (🟡 P3 — opcjonalne):**
+
+- [x] 🟡 [nit] **ProjektTabela.tsx** — rename `handleToggle` → `makeToggleHandler` + explicit return type. ✅
+- [x] 🟡 [nit] **useProjektData.ts** — `id as string` usunięte (guard z early throw w queryFn). ✅
+- [x] 🟡 [nit] **FlagBtn.tsx** — `import type { MouseEvent } from 'react'` zamiast `React.MouseEvent`. ✅
+- [x] 🟡 [nit] **Explicit return types** na hookach danych (`UseQueryResult<…>`, `UseProjektMutationsResult`) — wyrównane z `useFiltry`/`useIsMobile`. ✅
+- [x] 🟡 [nit] **ProjektTabela.tsx** — `FlagBtn` dostaje `disabled={toggleFlaga.isPending}` (+ test z opóźnionym PATCH). Szerokości kolumn z DESIGN.md:162-169 — **świadomie pominięte** (kosmetyka, tableLayout auto zostaje). ✅ częściowo
+- [ ] 🟡 [nit] **Filtry.tsx:44-53** — logika liczników → `useLiczniki(projekty)` dopiero przy wzroście. Bez akcji (próg nieosiągnięty).
+- [ ] 🟡 [nit] **queryKeys.ts:23** — `szukaj` w query key/Devtools — bez akcji (ryzyko minimalne, wspólne konto).
+- [ ] 🟡 [nit] **Header.tsx** — `async handleSignOut` bez `await` — bez akcji (łapie błąd wewnątrz, w praktyce OK).
+- [x] 🟡 [nit] **ListaPage** — `ListaPage.test.tsx` dodany (2 testy: brak filtra → `brak-projektow` + nawigacja `/nowy`; aktywny filtr → `brak-wynikow` + reset). Przez MSW (konwencja repo), nie mock hooka. ✅
+- [ ] 🟡 [nit] **Filtry.tsx:78** — warning jsdom `<search>` — bez akcji (kosmetyka stderr testów).
 
 ---
 
