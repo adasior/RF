@@ -14,5 +14,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
 /**
  * Klient Supabase (anon key) — typy Database zostaną wygenerowane w U2/U4.
  * Service role key NIGDY nie trafia do frontu (tylko anon key).
+ *
+ * `fetch` przekazujemy jako leniwy wrapper wołający bieżący `globalThis.fetch`
+ * (a nie referencję z chwili konstrukcji). W produkcji to po prostu platformowy
+ * fetch; w testach pozwala MSW przechwycić żądania, mimo że klient powstaje przy
+ * imporcie modułu (przed `server.listen()`).
  */
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  global: {
+    fetch: (input, init) => globalThis.fetch(input, init),
+  },
+});

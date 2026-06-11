@@ -17,5 +17,11 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: true,
+    // Stałe env dla testów — pozwalają zainicjalizować klient Supabase (lib/supabase.ts
+    // wymaga URL/anon key) i dają MSW deterministyczny host do interceptu REST.
+    env: {
+      VITE_SUPABASE_URL: 'http://supabase.test',
+      VITE_SUPABASE_ANON_KEY: 'test-anon-key',
+    },
   },
 });
