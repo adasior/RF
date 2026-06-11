@@ -1,0 +1,98 @@
+@import 'tailwindcss';
+
+/*
+ * Tokeny portowane 1:1 z DESIGN.md v5 (sekcja Paleta + Typografia).
+ * DESIGN.md jest źródłem prawdy — wartości hex zachowane dokładnie.
+ */
+@theme {
+  /* Fonty */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Fraunces', ui-serif, Georgia, serif;
+
+  /* Tła */
+  --color-bg: #fcfbf9; /* strona — ciepły biały */
+  --color-surface: #ffffff; /* karty, wiersze, formularz */
+  --color-surface-alt: #f5f2ee; /* nagłówek tabeli */
+  --color-surface-row: #fdfcfa; /* hover wiersza */
+
+  /* Obramowania */
+  --color-border: #e9e4dc;
+  --color-border-row: #f0ede7; /* między wierszami tabeli */
+  --color-border-focus: #b5542d;
+
+  /* Tekst */
+  --color-text-primary: #1e1b17;
+  --color-text-secondary: #8a8170;
+  --color-text-meta: #b5ac9c;
+  --color-text-disabled: #c9c3b8;
+
+  /* Akcent — terakota */
+  --color-accent: #b5542d;
+  --color-accent-hover: #9c4525;
+  --color-accent-light: #f6e7d4;
+
+  /* Flagi — zielony (aktywne) */
+  --color-flag-on-bg: #d6edd8;
+  --color-flag-on-border: #3a8c42;
+  --color-flag-on-text: #1e6626;
+
+  /* Flagi — szary (nieaktywne) */
+  --color-flag-off-bg: #eceae6;
+  --color-flag-off-border: #c4bfb8;
+  --color-flag-off-text: #7a756e;
+
+  /* Niebezpieczeństwo */
+  --color-danger: #c0392b;
+
+  /* Radius (z DESIGN.md: input 10px, flaga 8px, sheet 16px, pill 999px) */
+  --radius-flag: 8px;
+  --radius-input: 10px;
+  --radius-card: 10px;
+  --radius-sheet: 16px;
+  --radius-pill: 999px;
+
+  /* Animacje */
+  --animate-sheet-up: sheetUp 200ms ease;
+  --animate-toast-in: toastIn 160ms ease;
+}
+
+@keyframes sheetUp {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
