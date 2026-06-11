@@ -1,4 +1,5 @@
 import { Check, Circle } from 'lucide-react';
+import type { MouseEvent } from 'react';
 
 export type FlagBtnSize = 'table' | 'detail' | 'card';
 
@@ -41,7 +42,7 @@ const ICON_SIZE: Record<FlagBtnSize, number> = {
  * nieaktywny = szary + Circle (stroke 2). Klik wywołuje `onToggle(!isActive)`.
  */
 export function FlagBtn({ label, isActive, size, onToggle, disabled }: FlagBtnProps) {
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>): void => {
+  const handleClick = (event: MouseEvent<HTMLButtonElement>): void => {
     // Wewnątrz klikalnego wiersza tabeli — nie propaguj do nawigacji.
     event.stopPropagation();
     onToggle(!isActive);

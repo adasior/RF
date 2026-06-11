@@ -22,8 +22,8 @@ vi.mock('@/lib/supabase', () => ({
 const fakeSession = { access_token: 'token', user: { id: 'u1' } } as unknown as Session;
 
 function AuthProbe() {
-  const { session, loading } = useAuth();
-  if (loading) return <span>loading</span>;
+  const { session, isLoading } = useAuth();
+  if (isLoading) return <span>loading</span>;
   return <span>{session ? 'zalogowany' : 'anon'}</span>;
 }
 

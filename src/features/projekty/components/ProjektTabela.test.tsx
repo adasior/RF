@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 import type { ReactNode } from 'react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -80,6 +80,12 @@ describe('ProjektTabela', () => {
     expect(screen.getByText('Jan Kowalski')).toBeInTheDocument();
   });
 
+  it('nagłówek kolumny używa columnLabel gdy zdefiniowany („Przesłany haft/sito")', () => {
+    renderTabela([projektFixture()]);
+
+    expect(screen.getByText('Przesłany haft/sito')).toBeInTheDocument();
+  });
+
   it('puste pole kontaktu wyświetla „—"', () => {
     renderTabela([projektFixture({ kontakt: null })]);
 
@@ -102,6 +108,25 @@ describe('ProjektTabela', () => {
 
     await waitFor(() => expect(patchWyslany).toBe(true));
     expect(toastFn).toHaveBeenCalledWith('ROZPISANE: TAK');
+  });
+
+  it('podczas trwającej mutacji przyciski flag są disabled (ochrona przed double-click)', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.patch(PROJEKTY_REST_URL, async () => {
+        await delay(150);
+        return HttpResponse.json([], { status: 204 });
+      }),
+    );
+
+    renderTabela([projektFixture({ rozpisane: false })]);
+
+    const flagBtn = screen.getByRole('button', { name: /rozpisane/i });
+    await user.click(flagBtn);
+
+    await waitFor(() => expect(flagBtn).toBeDisabled());
+    // Po zakończeniu mutacji przyciski wracają do stanu aktywnego.
+    await waitFor(() => expect(flagBtn).toBeEnabled());
   });
 
   it('wiersz z 4 flagami true ma klasę przygaszenia opacity-40', () => {

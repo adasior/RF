@@ -131,7 +131,7 @@ describe('toggleFlaga', () => {
     });
   });
 
-  it('błąd sieci: rollback do poprzedniej wartości + toast + propagacja błędu', async () => {
+  it('błąd sieci: rollback do poprzedniej wartości + toast + stan błędu mutacji (bez re-throw)', async () => {
     server.use(
       http.patch(PROJEKTY_REST_URL, () => HttpResponse.json({ message: 'boom' }, { status: 500 })),
     );
@@ -142,19 +142,38 @@ describe('toggleFlaga', () => {
       projektFixture({ rozpisane: false }),
     ]);
 
-    await expect(
-      result.current.toggleFlaga.mutateAsync({
-        id: '11111111-1111-1111-1111-111111111111',
-        key: 'rozpisane',
-        nowaWartosc: true,
-      }),
-    ).rejects.toThrow();
+    // `mutate` (nie mutateAsync) — kontrakt: brak unhandled rejection, UI czyta `isError`.
+    result.current.toggleFlaga.mutate({
+      id: '11111111-1111-1111-1111-111111111111',
+      key: 'rozpisane',
+      nowaWartosc: true,
+    });
+
+    await waitFor(() => expect(result.current.toggleFlaga.isError).toBe(true));
 
     // Rollback: wartość wróciła do false.
     const lista = queryClient.getQueryData<Projekt[]>(queryKeys.lista(filtry));
     expect(lista?.[0].rozpisane).toBe(false);
     // Toast pokazany.
     expect(toastError).toHaveBeenCalledWith('Błąd — spróbuj ponownie');
+  });
+
+  it('onSettled invaliduje też cache detalu projektu (queryKeys.projekt(id))', async () => {
+    server.use(
+      http.patch(PROJEKTY_REST_URL, () => HttpResponse.json([], { status: 204 })),
+    );
+
+    const { result, queryClient } = setup();
+    const id = '11111111-1111-1111-1111-111111111111';
+    queryClient.setQueryData(queryKeys.projekt(id), projektFixture());
+
+    await result.current.toggleFlaga.mutateAsync({
+      id,
+      key: 'rozpisane',
+      nowaWartosc: true,
+    });
+
+    expect(queryClient.getQueryState(queryKeys.projekt(id))?.isInvalidated).toBe(true);
   });
 });
 

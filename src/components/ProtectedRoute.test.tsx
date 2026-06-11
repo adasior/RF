@@ -30,21 +30,21 @@ const fakeSession = { access_token: 'token', user: { id: 'u1' } } as unknown as 
 
 describe('ProtectedRoute', () => {
   it('bez sesji przekierowuje na /login', () => {
-    renderGuard({ session: null, loading: false });
+    renderGuard({ session: null, isLoading: false });
 
     expect(screen.getByText('Ekran logowania')).toBeInTheDocument();
     expect(screen.queryByText('Chroniona treść')).not.toBeInTheDocument();
   });
 
   it('z sesją renderuje children', () => {
-    renderGuard({ session: fakeSession, loading: false });
+    renderGuard({ session: fakeSession, isLoading: false });
 
     expect(screen.getByText('Chroniona treść')).toBeInTheDocument();
     expect(screen.queryByText('Ekran logowania')).not.toBeInTheDocument();
   });
 
   it('podczas ładowania nie przekierowuje ani nie renderuje children — pokazuje stan ładowania', () => {
-    renderGuard({ session: null, loading: true });
+    renderGuard({ session: null, isLoading: true });
 
     expect(screen.queryByText('Ekran logowania')).not.toBeInTheDocument();
     expect(screen.queryByText('Chroniona treść')).not.toBeInTheDocument();

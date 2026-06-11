@@ -1,14 +1,10 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, type UseMutationResult } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { queryKeys } from '@/lib/queryKeys';
-import { edycjaProjektuInput, nowyProjektInput } from '@/lib/schemas';
+import { PROJEKT_KOLUMNY, queryKeys } from '@/lib/queryKeys';
+import { edycjaProjektuInput, nowyProjektInput, projektSchema } from '@/lib/schemas';
 import { supabase } from '@/lib/supabase';
 import type { EdycjaProjektuInput, FlagaKey, NowyProjektInput, Projekt } from '@/lib/types';
-
-/** Konkretne kolumny — nie `select('*')`. */
-const KOLUMNY =
-  'id, nazwa, kategoria, rozpisane, przeslany, sprawdzony, wydrukowany, kontakt, uwagi, dodal, archived_at, created_at, updated_at';
 
 const TOAST_BLAD = 'Błąd — spróbuj ponownie';
 
@@ -21,6 +17,15 @@ interface ToggleFlagaArgs {
 interface ToggleFlagaContext {
   poprzednieListy: Array<[readonly unknown[], Projekt[] | undefined]>;
   poprzedniProjekt: Projekt | undefined;
+}
+
+interface UseProjektMutationsResult {
+  create: UseMutationResult<Projekt, Error, NowyProjektInput>;
+  update: UseMutationResult<Projekt, Error, { id: string; input: EdycjaProjektuInput }>;
+  toggleFlaga: UseMutationResult<void, Error, ToggleFlagaArgs, ToggleFlagaContext>;
+  archive: UseMutationResult<void, Error, string>;
+  restore: UseMutationResult<void, Error, string>;
+  hardDelete: UseMutationResult<void, Error, string>;
 }
 
 function patchFlaga(projekt: Projekt, key: FlagaKey, nowaWartosc: boolean): Projekt {
@@ -45,14 +50,15 @@ async function createProjekt(input: NowyProjektInput): Promise<Projekt> {
       sprawdzony: false,
       wydrukowany: false,
     })
-    .select(KOLUMNY)
+    .select(PROJEKT_KOLUMNY)
     .single();
 
   if (error) {
     throw error;
   }
 
-  return data as Projekt;
+  // Granica Zod: odpowiedź bazy walidowana, nie rzutowana (`as`).
+  return projektSchema.parse(data);
 }
 
 async function updateProjekt(id: string, input: EdycjaProjektuInput): Promise<Projekt> {
@@ -72,14 +78,14 @@ async function updateProjekt(id: string, input: EdycjaProjektuInput): Promise<Pr
       ...(dane.wydrukowany !== undefined ? { wydrukowany: dane.wydrukowany } : {}),
     })
     .eq('id', id)
-    .select(KOLUMNY)
+    .select(PROJEKT_KOLUMNY)
     .single();
 
   if (error) {
     throw error;
   }
 
-  return data as Projekt;
+  return projektSchema.parse(data);
 }
 
 async function setArchivedAt(id: string, archivedAt: string | null): Promise<void> {
@@ -104,13 +110,14 @@ async function deleteProjekt(id: string): Promise<void> {
 /**
  * Mutacje warstwy danych dla projektów.
  * - `create` / `update` — walidacja Zod przed wysłaniem.
- * - `toggleFlaga` — optimistic update cache + rollback przy błędzie; onError → toast + re-throw.
+ * - `toggleFlaga` — optimistic update cache + rollback przy błędzie.
  * - `archive` / `restore` — soft delete przez `archived_at` (D6).
  * - `hardDelete` — realny DELETE (tylko z widoku archiwum).
  *
- * Każda mutacja w `onError` pokazuje toast i RE-THROW, by UI mógł zareagować.
+ * Każda mutacja w `onError` pokazuje toast — BEZ re-throw (re-throw produkowałby
+ * unhandled rejection przy `mutate` bez własnego onError). UI reaguje przez `isError`.
  */
-export function useProjektMutations() {
+export function useProjektMutations(): UseProjektMutationsResult {
   const queryClient = useQueryClient();
 
   const create = useMutation({
@@ -118,9 +125,8 @@ export function useProjektMutations() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.listy() });
     },
-    onError: (error) => {
+    onError: () => {
       toast.error(TOAST_BLAD);
-      throw error;
     },
   });
 
@@ -131,9 +137,8 @@ export function useProjektMutations() {
       queryClient.setQueryData(queryKeys.projekt(projekt.id), projekt);
       void queryClient.invalidateQueries({ queryKey: queryKeys.listy() });
     },
-    onError: (error) => {
+    onError: () => {
       toast.error(TOAST_BLAD);
-      throw error;
     },
   });
 
@@ -162,7 +167,7 @@ export function useProjektMutations() {
 
       return { poprzednieListy, poprzedniProjekt };
     },
-    onError: (error, { id }, context) => {
+    onError: (_error, { id }, context) => {
       // Rollback do zapamiętanego stanu.
       context?.poprzednieListy.forEach(([klucz, dane]) => {
         queryClient.setQueryData(klucz, dane);
@@ -171,10 +176,11 @@ export function useProjektMutations() {
         queryClient.setQueryData(queryKeys.projekt(id), context.poprzedniProjekt);
       }
       toast.error(TOAST_BLAD);
-      throw error;
     },
-    onSettled: () => {
+    onSettled: (_data, _error, { id }) => {
+      // onMutate patchuje listy ORAZ detal — invaliduj oba, by reconcile objął całość.
       void queryClient.invalidateQueries({ queryKey: queryKeys.listy() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.projekt(id) });
     },
   });
 
@@ -183,9 +189,8 @@ export function useProjektMutations() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.listy() });
     },
-    onError: (error) => {
+    onError: () => {
       toast.error(TOAST_BLAD);
-      throw error;
     },
   });
 
@@ -194,9 +199,8 @@ export function useProjektMutations() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.listy() });
     },
-    onError: (error) => {
+    onError: () => {
       toast.error(TOAST_BLAD);
-      throw error;
     },
   });
 
@@ -205,9 +209,8 @@ export function useProjektMutations() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.listy() });
     },
-    onError: (error) => {
+    onError: () => {
       toast.error(TOAST_BLAD);
-      throw error;
     },
   });
 

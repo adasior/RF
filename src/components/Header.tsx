@@ -10,14 +10,14 @@ import { supabase } from '@/lib/supabase';
  */
 export function Header() {
   const navigate = useNavigate();
-  const [signingOut, setSigningOut] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async (): Promise<void> => {
-    setSigningOut(true);
+    setIsSigningOut(true);
     const { error } = await supabase.auth.signOut();
     if (error) {
       toast.error('Nie udało się wylogować — spróbuj ponownie');
-      setSigningOut(false);
+      setIsSigningOut(false);
       return;
     }
     // Po sukcesie onAuthStateChange wyczyści sesję i ProtectedRoute przekieruje na /login.
@@ -39,7 +39,7 @@ export function Header() {
         <button
           type="button"
           onClick={handleSignOut}
-          disabled={signingOut}
+          disabled={isSigningOut}
           className="rounded-flag border border-border px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus disabled:opacity-60"
         >
           Wyloguj

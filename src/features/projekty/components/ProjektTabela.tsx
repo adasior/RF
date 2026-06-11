@@ -29,7 +29,11 @@ export function ProjektTabela({ projekty }: ProjektTabelaProps) {
   const navigate = useNavigate();
   const { toggleFlaga } = useProjektMutations();
 
-  const handleToggle = (projekt: Projekt, key: (typeof FLAGI)[number]['key'], label: string) => {
+  const makeToggleHandler = (
+    projekt: Projekt,
+    key: (typeof FLAGI)[number]['key'],
+    label: string,
+  ): ((nowaWartosc: boolean) => void) => {
     return (nowaWartosc: boolean): void => {
       toggleFlaga.mutate(
         { id: projekt.id, key, nowaWartosc },
@@ -37,8 +41,7 @@ export function ProjektTabela({ projekty }: ProjektTabelaProps) {
           onSuccess: () => {
             toast(`${label}: ${nowaWartosc ? 'TAK' : 'NIE'}`);
           },
-          // Toast błędu pokazuje sam hook mutacji (rollback + re-throw).
-          onError: () => {},
+          // Toast błędu i rollback obsługuje sam hook mutacji (bez re-throw).
         },
       );
     };
@@ -89,7 +92,8 @@ export function ProjektTabela({ projekty }: ProjektTabelaProps) {
                   label={flaga.label}
                   isActive={projekt[flaga.key]}
                   size="table"
-                  onToggle={handleToggle(projekt, flaga.key, flaga.label)}
+                  disabled={toggleFlaga.isPending}
+                  onToggle={makeToggleHandler(projekt, flaga.key, flaga.label)}
                 />
               </td>
             ))}

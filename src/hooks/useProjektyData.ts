@@ -1,15 +1,23 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 
-import { queryKeys, type ProjektyFiltry } from '@/lib/queryKeys';
+import { PROJEKT_KOLUMNY, queryKeys, type ProjektyFiltry } from '@/lib/queryKeys';
+import { projektSchema } from '@/lib/schemas';
 import { supabase } from '@/lib/supabase';
 import type { Projekt } from '@/lib/types';
 
-/** Konkretne kolumny — nie `select('*')` (data exposure / nadmiarowy transfer). */
-const KOLUMNY =
-  'id, nazwa, kategoria, rozpisane, przeslany, sprawdzony, wydrukowany, kontakt, uwagi, dodal, archived_at, created_at, updated_at';
+/** Maksymalna długość frazy „Szukaj" — spójnie z limitem `nazwa` w schemas.ts (200). */
+const SZUKAJ_MAX_DLUGOSC = 200;
+
+/**
+ * Escapuje metaznaki wzorca LIKE/ILIKE (`\`, `%`, `_`), by user input
+ * był traktowany jako literał, a nie wzorzec (LIKE injection).
+ */
+function escapeLike(wartosc: string): string {
+  return wartosc.replace(/[\\%_]/g, (znak) => `\\${znak}`);
+}
 
 async function pobierzProjekty(filtry: ProjektyFiltry): Promise<Projekt[]> {
-  let query = supabase.from('projekty').select(KOLUMNY);
+  let query = supabase.from('projekty').select(PROJEKT_KOLUMNY);
 
   // Domyślnie tylko aktywne (archived_at is null); archiwum:true → tylko zarchiwizowane.
   query = filtry.archiwum
@@ -21,9 +29,10 @@ async function pobierzProjekty(filtry: ProjektyFiltry): Promise<Projekt[]> {
     query = query.eq(filtry.flaga, false);
   }
 
-  // Szukaj po nazwie (ilike, case-insensitive).
-  if (filtry.szukaj && filtry.szukaj.trim().length > 0) {
-    query = query.ilike('nazwa', `%${filtry.szukaj.trim()}%`);
+  // Szukaj po nazwie (ilike, case-insensitive) — input escapowany i przycięty na granicy.
+  const szukaj = filtry.szukaj?.trim().slice(0, SZUKAJ_MAX_DLUGOSC);
+  if (szukaj && szukaj.length > 0) {
+    query = query.ilike('nazwa', `%${escapeLike(szukaj)}%`);
   }
 
   const { data, error } = await query.order('created_at', { ascending: false });
@@ -32,7 +41,8 @@ async function pobierzProjekty(filtry: ProjektyFiltry): Promise<Projekt[]> {
     throw error;
   }
 
-  return (data ?? []) as Projekt[];
+  // Granica Zod: odpowiedź bazy walidowana, nie rzutowana (`as`).
+  return projektSchema.array().parse(data ?? []);
 }
 
 /**
@@ -40,7 +50,7 @@ async function pobierzProjekty(filtry: ProjektyFiltry): Promise<Projekt[]> {
  * Domyślnie: aktywne (`archived_at is null`), sortowane `created_at desc`.
  * Filtry flagi + szukaj łączą się przez AND.
  */
-export function useProjektyData(filtry: ProjektyFiltry = {}) {
+export function useProjektyData(filtry: ProjektyFiltry = {}): UseQueryResult<Projekt[], Error> {
   return useQuery({
     queryKey: queryKeys.lista(filtry),
     queryFn: () => pobierzProjekty(filtry),

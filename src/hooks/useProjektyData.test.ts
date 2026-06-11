@@ -66,6 +66,32 @@ describe('useProjektyData', () => {
     expect(url?.searchParams.get('archived_at')).toBe('is.null');
   });
 
+  it('escapuje \\, % i _ w szukaj — metaznaki LIKE trafiają do zapytania jako literały', async () => {
+    const getUrl = przechwycZapytanie();
+
+    const { result } = renderHook(() => useProjektyData({ szukaj: '50%_a\\b' }), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    const url = getUrl();
+    expect(url?.searchParams.get('nazwa')).toBe('ilike.%50\\%\\_a\\\\b%');
+  });
+
+  it('przycina szukaj do 200 znaków na granicy', async () => {
+    const getUrl = przechwycZapytanie();
+
+    const { result } = renderHook(() => useProjektyData({ szukaj: 'a'.repeat(250) }), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    const url = getUrl();
+    expect(url?.searchParams.get('nazwa')).toBe(`ilike.%${'a'.repeat(200)}%`);
+  });
+
   it('archiwum:true pobiera wyłącznie zarchiwizowane (archived_at is not null)', async () => {
     const getUrl = przechwycZapytanie();
 
@@ -107,5 +133,19 @@ describe('useProjektyData', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toHaveLength(1);
     expect(result.current.data?.[0].nazwa).toBe('Koszulka');
+  });
+
+  it('odrzuca niepoprawny kształt danych z bazy (granica Zod → stan błędu)', async () => {
+    server.use(
+      http.get(PROJEKTY_REST_URL, () =>
+        // Brak wymaganych pól (m.in. flag boolean) → projektSchema musi odrzucić.
+        HttpResponse.json([{ id: 'nie-uuid', nazwa: 'Koszulka' }]),
+      ),
+    );
+
+    const { result } = renderHook(() => useProjektyData(), { wrapper: createWrapper() });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error).toBeTruthy();
   });
 });

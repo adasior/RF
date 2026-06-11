@@ -1,17 +1,14 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 
-import { queryKeys } from '@/lib/queryKeys';
+import { PROJEKT_KOLUMNY, queryKeys } from '@/lib/queryKeys';
+import { projektSchema } from '@/lib/schemas';
 import { supabase } from '@/lib/supabase';
 import type { Projekt } from '@/lib/types';
-
-/** Konkretne kolumny — nie `select('*')` (data exposure / nadmiarowy transfer). */
-const KOLUMNY =
-  'id, nazwa, kategoria, rozpisane, przeslany, sprawdzony, wydrukowany, kontakt, uwagi, dodal, archived_at, created_at, updated_at';
 
 async function pobierzProjekt(id: string): Promise<Projekt> {
   const { data, error } = await supabase
     .from('projekty')
-    .select(KOLUMNY)
+    .select(PROJEKT_KOLUMNY)
     .eq('id', id)
     .single();
 
@@ -19,17 +16,25 @@ async function pobierzProjekt(id: string): Promise<Projekt> {
     throw error;
   }
 
-  return data as Projekt;
+  // Granica Zod: odpowiedź bazy walidowana, nie rzutowana (`as`).
+  return projektSchema.parse(data);
 }
 
 /**
  * Pojedynczy projekt po id (widok szczegółów / edycja).
  * Query uruchamia się tylko gdy `id` jest podane (enabled).
  */
-export function useProjektData(id: string | undefined) {
+export function useProjektData(id: string | undefined): UseQueryResult<Projekt, Error> {
   return useQuery({
     queryKey: queryKeys.projekt(id ?? ''),
-    queryFn: () => pobierzProjekt(id as string),
+    queryFn: () => {
+      // Guard zamiast `id as string` — queryFn nie odpali się bez id (enabled),
+      // ale typ wymusza jawną obsługę undefined.
+      if (!id) {
+        throw new Error('Brak id projektu');
+      }
+      return pobierzProjekt(id);
+    },
     enabled: Boolean(id),
   });
 }

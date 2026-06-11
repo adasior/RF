@@ -14,6 +14,13 @@ export interface ProjektyFiltry {
 }
 
 /**
+ * Konkretne kolumny tabeli `projekty` — nie `select('*')` (data exposure / nadmiarowy transfer).
+ * Jedno źródło prawdy dla wszystkich hooków warstwy danych.
+ */
+export const PROJEKT_KOLUMNY =
+  'id, nazwa, kategoria, rozpisane, przeslany, sprawdzony, wydrukowany, kontakt, uwagi, dodal, archived_at, created_at, updated_at' as const;
+
+/**
  * Typowany factory kluczy React Query dla domeny `projekty`.
  * Spójna hierarchia ułatwia invalidację (np. `queryKeys.listy()` unieważnia wszystkie listy).
  */

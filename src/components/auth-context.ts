@@ -3,12 +3,12 @@ import { createContext, useContext } from 'react';
 
 /**
  * Stan sesji współdzielony przez aplikację.
- * `loading` = trwa początkowe odczytanie sesji (getSession); dopóki true,
+ * `isLoading` = trwa początkowe odczytanie sesji (getSession); dopóki true,
  * guard tras nie podejmuje decyzji o przekierowaniu.
  */
 export interface AuthState {
   session: Session | null;
-  loading: boolean;
+  isLoading: boolean;
 }
 
 export const AuthContext = createContext<AuthState | undefined>(undefined);

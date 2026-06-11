@@ -15,31 +15,31 @@ interface AuthProviderProps {
  */
 export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    let active = true;
+    let isActive = true;
 
     supabase.auth.getSession().then(({ data }) => {
-      if (!active) return;
+      if (!isActive) return;
       setSession(data.session);
-      setLoading(false);
+      setIsLoading(false);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
-      setLoading(false);
+      setIsLoading(false);
     });
 
     return () => {
-      active = false;
+      isActive = false;
       subscription.unsubscribe();
     };
   }, []);
 
-  const value: AuthState = { session, loading };
+  const value: AuthState = { session, isLoading };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

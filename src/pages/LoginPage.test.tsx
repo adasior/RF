@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -25,6 +25,20 @@ async function fillAndSubmit(): Promise<void> {
 describe('LoginPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('submit z pustymi polami: komunikat „Podaj email i hasło", auth NIE wywołane', async () => {
+    render(<LoginPage />);
+
+    // jsdom blokuje klik submitu przez natywne `required` — dispatch submit
+    // bezpośrednio, by pokryć guard `!email || !password` w loginAction.
+    const form = screen.getByRole('button', { name: /zaloguj/i }).closest('form');
+    expect(form).not.toBeNull();
+    if (form) fireEvent.submit(form);
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Podaj email i hasło');
+    expect(signInWithPassword).not.toHaveBeenCalled();
   });
 
   it('pokazuje inline błąd PL gdy auth odrzuca logowanie', async () => {

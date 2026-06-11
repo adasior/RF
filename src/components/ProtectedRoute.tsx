@@ -9,14 +9,14 @@ interface ProtectedRouteProps {
 
 /**
  * Bramka tras chronionych.
- * - loading → krótki stan ładowania (bez fade, per DESIGN.md).
+ * - isLoading → krótki stan ładowania (bez fade, per DESIGN.md).
  * - brak sesji → przekierowanie na /login.
  * - sesja → renderuje children.
  */
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { session, loading } = useAuth();
+  const { session, isLoading } = useAuth();
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-bg">
         <span className="text-sm text-text-secondary">Ładowanie…</span>
