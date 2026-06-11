@@ -42,7 +42,7 @@ Weryfikacja:
 - [x] Weryfikacja: `npm run build` kończy się sukcesem
 - [x] Weryfikacja: `npm run test` — testy `format`/`config` zielone (14/14)
 - [x] Weryfikacja: `npm run lint` bez błędów
-- [ ] Weryfikacja: [E2E] `/` ładuje się bez błędów konsoli (agent-browser snapshot)
+- [ ] Weryfikacja: [E2E] `/` ładuje się bez błędów konsoli (agent-browser snapshot) (SKIP — Agent 5 niedostępny: brak dev env z Supabase)
 
 Operator:
 - [ ] Operator zakłada projekt Supabase i wkleja `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` do `.env`
@@ -66,9 +66,9 @@ Scenariusze testowe:
 
 Weryfikacja:
 - [x] Weryfikacja: składnia SQL poprawna i idempotentna (statycznie — brak Docker/CLI w środowisku)
-- [ ] Weryfikacja: anon-key SELECT zwraca pustą tablicę lub błąd uprawnień (deny-all dla `anon`) — operator po aplikacji migracji
-- [ ] Weryfikacja: authenticated SELECT/INSERT/UPDATE/DELETE bez błędu RLS — operator
-- [ ] Weryfikacja: 4 kolumny flag + `archived_at` istnieją w schemacie (`information_schema.columns` via `verify_rls.sql`) — operator
+- [ ] Weryfikacja: anon-key SELECT zwraca pustą tablicę lub błąd uprawnień (deny-all dla `anon`) — operator po aplikacji migracji — wymaga operatora (checklist)
+- [ ] Weryfikacja: authenticated SELECT/INSERT/UPDATE/DELETE bez błędu RLS — operator — wymaga operatora (checklist)
+- [ ] Weryfikacja: 4 kolumny flag + `archived_at` istnieją w schemacie (`information_schema.columns` via `verify_rls.sql`) — operator — wymaga operatora (checklist)
 
 Operator:
 - [ ] Operator aplikuje migracje w Supabase (SQL Editor lub `supabase db push`)
@@ -94,11 +94,28 @@ Scenariusze testowe:
 
 Weryfikacja:
 - [x] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone (w tym test guardu)
-- [ ] Weryfikacja: [E2E] niezalogowany dostęp do `/` przekierowuje na `/login`
-- [ ] Weryfikacja: [E2E] po zalogowaniu `/` osiągalne; po wylogowaniu znów `/login`
+- [ ] Weryfikacja: [E2E] niezalogowany dostęp do `/` przekierowuje na `/login` (SKIP — Agent 5 niedostępny: brak dev env z Supabase)
+- [ ] Weryfikacja: [E2E] po zalogowaniu `/` osiągalne; po wylogowaniu znów `/login` (SKIP — Agent 5 niedostępny: brak dev env z Supabase)
 
 Operator:
 - [ ] Operator zakłada wspólne konto zespołu (email+hasło) w Supabase Auth i przekazuje dane 4 osobom
+
+---
+
+## Do poprawy po review fazy 1
+
+> Review: 2026-06-11 (`review-faza-1.md`). Gate: **⚠️ KONTYNUUJ Z ZASTRZEŻENIAMI** — 0× P1.
+> Quality gate (typecheck/lint/test 22/22/build) zielony. Zgodność ze spec: pełna.
+
+**Zablokowane na infrastrukturze operatora (nie defekty kodu — uruchom po setupie Supabase):**
+
+- [ ] 🟠 [important] **U1/U3 — weryfikacje E2E** — 3 scenariusze (`/` bez błędów konsoli; redirect niezalogowanego na `/login`; po (wy)logowaniu) — SKIP, brak `.env`/projektu Supabase. Uruchom po wykonaniu Operator TODO (kontekst §110).
+
+**Nity (opcjonalne):**
+
+- [ ] 🟡 [nit] **supabase/migrations/0002_rls_policies.sql** — `using(true)` daje pełny CRUD na PII (`kontakt`) każdemu użytkownikowi Supabase Auth. → Operator: wyłączyć publiczne email signups w Supabase Auth (utwardzenie modelu wspólnego konta D3).
+- [ ] 🟡 [nit] **Header.tsx:11 / AuthProvider.tsx:18,21** — boolean bez prefiksu `is`/`has` (`signingOut`, `loading`, `active`) — coding-rules §7.
+- [ ] 🟡 [nit] **LoginPage.tsx:18** — gałąź „Podaj email i hasło" nietestowana i przesłonięta natywnym `required`; dodać test lub zostawić jako defense-in-depth.
 
 ---
 
@@ -108,27 +125,27 @@ Operator:
 **Delegate to:** feature-builder-data · **Nakład:** L · **Zależności:** U1, U2, U3
 
 Implementacja:
-- [ ] `src/lib/schemas.ts` (Zod: `projektSchema`, `nowyProjektInput`, `edycjaProjektuInput`)
-- [ ] Rozszerz `src/lib/types.ts` (typy z `z.infer`, typ klucza flagi `FlagaKey`, zero `any`)
-- [ ] `src/hooks/useProjektyData.ts` (lista z filtrami, `created_at desc`, `archived_at is null` domyślnie)
-- [ ] `src/hooks/useProjektData.ts` (pojedynczy)
-- [ ] `src/hooks/useProjektMutations.ts` (`create`/`update`/`toggleFlaga`/`archive`/`restore`/`hardDelete`; `toggleFlaga` z optimistic update + rollback; `onError` → toast + re-throw)
-- [ ] `src/lib/queryKeys.ts`
-- [ ] Test (unit, test-first wertykalnie): `schemas.test.ts`, `useProjektyData.test.ts`, `useProjektMutations.test.ts` (MSW mockuje TYLKO Supabase REST)
+- [x] `src/lib/schemas.ts` (Zod: `projektSchema`, `nowyProjektInput`, `edycjaProjektuInput`)
+- [x] Rozszerz `src/lib/types.ts` (typy z `z.infer`, typ klucza flagi `FlagaKey`, zero `any`)
+- [x] `src/hooks/useProjektyData.ts` (lista z filtrami, `created_at desc`, `archived_at is null` domyślnie)
+- [x] `src/hooks/useProjektData.ts` (pojedynczy)
+- [x] `src/hooks/useProjektMutations.ts` (`create`/`update`/`toggleFlaga`/`archive`/`restore`/`hardDelete`; `toggleFlaga` z optimistic update + rollback; `onError` → toast + re-throw)
+- [x] `src/lib/queryKeys.ts`
+- [x] Test (unit, test-first wertykalnie): `schemas.test.ts`, `useProjektyData.test.ts`, `useProjektMutations.test.ts` (MSW mockuje TYLKO Supabase REST)
 
 Scenariusze testowe:
-- [ ] Test: `useProjektyData` bez filtrów → wiersze `created_at desc`, tylko `archived_at is null`
-- [ ] Test: filtr flagi (np. `rozpisane=false`) + szukaj łączą się AND (asercja na parametrach zapytania)
-- [ ] Test: filtr „tylko zarchiwizowane" → wyłącznie `archived_at is not null`
-- [ ] Test: `create` waliduje Zod — brak `nazwa`/`kategoria`/`dodal` → błąd przed wysłaniem; nowy projekt ma 4 flagi `false`
-- [ ] Test: `toggleFlaga` optimistic ustawia nową wartość natychmiast; błąd sieci → rollback + toast + propagacja
-- [ ] Test: `archive`/`restore`/`hardDelete` wołają update(archived_at=now)/update(null)/delete
+- [x] Test: `useProjektyData` bez filtrów → wiersze `created_at desc`, tylko `archived_at is null`
+- [x] Test: filtr flagi (np. `rozpisane=false`) + szukaj łączą się AND (asercja na parametrach zapytania)
+- [x] Test: filtr „tylko zarchiwizowane" → wyłącznie `archived_at is not null`
+- [x] Test: `create` waliduje Zod — brak `nazwa`/`kategoria`/`dodal` → błąd przed wysłaniem; nowy projekt ma 4 flagi `false`
+- [x] Test: `toggleFlaga` optimistic ustawia nową wartość natychmiast; błąd sieci → rollback + toast + propagacja
+- [x] Test: `archive`/`restore`/`hardDelete` wołają update(archived_at=now)/update(null)/delete
 
 Weryfikacja:
-- [ ] Weryfikacja: `npm run typecheck` bez błędów, zero `any`
-- [ ] Weryfikacja: `npm run test` — schematy i hooki zielone
-- [ ] Weryfikacja: `npm run lint` bez błędów
-- [ ] Weryfikacja: brak pustych `catch {}` w nowych plikach
+- [x] Weryfikacja: `npm run typecheck` bez błędów, zero `any`
+- [x] Weryfikacja: `npm run test` — schematy i hooki zielone
+- [x] Weryfikacja: `npm run lint` bez błędów
+- [x] Weryfikacja: brak pustych `catch {}` w nowych plikach
 
 ---
 
@@ -136,23 +153,23 @@ Weryfikacja:
 **Delegate to:** feature-builder-ui · **Nakład:** L · **Zależności:** U4, U3
 
 Implementacja:
-- [ ] `src/features/projekty/components/FlagBtn.tsx` (reużywalny, `size: 'table' | 'detail' | 'card'`; aktywny=zielony+Check, nieaktywny=szary+Circle; bez animacji koloru)
-- [ ] `src/features/projekty/components/ProjektTabela.tsx` (kolumny `DESIGN.md`: Kategoria pill · Nazwa · Kontakt · 4× FlagBtn · Dodano; `table-layout:auto`; hover; klik wiersza→szczegóły; 4× true → `opacity 0.4`)
-- [ ] `src/features/projekty/components/EmptyState.tsx` (warianty: brak projektów / brak wyników)
-- [ ] `src/features/projekty/hooks/useIsMobile.ts` (`matchMedia('(max-width: 767px)')`, reaktywnie)
-- [ ] Modyfikuj `ListaPage.tsx` (header + tabela desktop); modyfikuj `Header.tsx` (CTA „+ Nowy projekt")
-- [ ] Toggle desktop: klik FlagBtn → `toggleFlaga` (optimistic) → toast „LABEL: TAK/NIE"; mobile ścieżka w U8
-- [ ] Test (unit): `FlagBtn.test.tsx`, `ProjektTabela.test.tsx`
+- [x] `src/features/projekty/components/FlagBtn.tsx` (reużywalny, `size: 'table' | 'detail' | 'card'`; aktywny=zielony+Check, nieaktywny=szary+Circle; bez animacji koloru)
+- [x] `src/features/projekty/components/ProjektTabela.tsx` (kolumny `DESIGN.md`: Kategoria pill · Nazwa · Kontakt · 4× FlagBtn · Dodano; `table-layout:auto`; hover; klik wiersza→szczegóły; 4× true → `opacity 0.4`)
+- [x] `src/features/projekty/components/EmptyState.tsx` (warianty: brak projektów / brak wyników)
+- [x] `src/features/projekty/hooks/useIsMobile.ts` (`matchMedia('(max-width: 767px)')`, reaktywnie)
+- [x] Modyfikuj `ListaPage.tsx` (header + tabela desktop); modyfikuj `Header.tsx` (CTA „+ Nowy projekt")
+- [x] Toggle desktop: klik FlagBtn → `toggleFlaga` (optimistic) → toast „LABEL: TAK/NIE"; mobile ścieżka w U8
+- [x] Test (unit): `FlagBtn.test.tsx`, `ProjektTabela.test.tsx`
 
 Scenariusze testowe:
-- [ ] Test: `FlagBtn` aktywny renderuje zielony styl + Check; nieaktywny szary + Circle; klik wywołuje handler z nową wartością
-- [ ] Test: na desktopie klik flagi wywołuje `toggleFlaga` od razu (bez ConfirmSheet) + pokazuje toast
-- [ ] Test: wiersz z 4 flagami `true` ma klasę przygaszenia (`opacity 0.4`)
-- [ ] Test: błąd mutacji → wartość flagi wraca do poprzedniej + toast „Błąd — spróbuj ponownie"
-- [ ] Test: [E2E] `/` tabela najnowsze-pierwsze; klik flagi natychmiastowy + toast; klik wiersza → szczegóły; pusta baza → empty state z CTA
+- [x] Test: `FlagBtn` aktywny renderuje zielony styl + Check; nieaktywny szary + Circle; klik wywołuje handler z nową wartością
+- [x] Test: na desktopie klik flagi wywołuje `toggleFlaga` od razu (bez ConfirmSheet) + pokazuje toast
+- [x] Test: wiersz z 4 flagami `true` ma klasę przygaszenia (`opacity 0.4`)
+- [x] Test: błąd mutacji → wartość flagi wraca do poprzedniej + toast „Błąd — spróbuj ponownie"
+- [ ] Test: [E2E] `/` tabela najnowsze-pierwsze; klik flagi natychmiastowy + toast; klik wiersza → szczegóły; pusta baza → empty state z CTA (weryfikacja wizualna w /dev-docs-review)
 
 Weryfikacja:
-- [ ] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone
+- [x] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone
 - [ ] Weryfikacja: [E2E] optimistic zmiana flagi widoczna natychmiast + toast (snapshot przed/po)
 - [ ] Weryfikacja: [E2E] wiersz z 4 flagami true przygaszony (screenshot)
 - [ ] Weryfikacja: [E2E] empty state widoczny przy braku danych
@@ -163,22 +180,22 @@ Weryfikacja:
 **Delegate to:** feature-builder-ui · **Nakład:** M · **Zależności:** U4, U5
 
 Implementacja:
-- [ ] `src/features/projekty/components/Filtry.tsx` (5 linków per `DESIGN.md`: Wszystkie · Do rozpisania · Do przesłania · Do sprawdzenia · Do wydrukowania; każdy z pillem-licznikiem; aktywny podkreślony terakotą; pole Szukaj)
-- [ ] `src/features/projekty/hooks/useFiltry.ts` (`{flaga, szukaj, archiwum}`, debounce szukaj)
-- [ ] Liczniki client-side (D10): liczone z pełnego zbioru aktywnych projektów, aktualizowane po każdej zmianie flagi
-- [ ] Modyfikuj `ListaPage.tsx` (podpięcie filtrów do `useProjektyData`)
-- [ ] Modyfikuj `EmptyState.tsx` (wariant „brak wyników" + „Pokaż wszystkie")
-- [ ] Test (unit, test-first liczniki + AND): `Filtry.test.tsx`, `useFiltry.test.ts`
+- [x] `src/features/projekty/components/Filtry.tsx` (5 linków per `DESIGN.md`: Wszystkie · Do rozpisania · Do przesłania · Do sprawdzenia · Do wydrukowania; każdy z pillem-licznikiem; aktywny podkreślony terakotą; pole Szukaj)
+- [x] `src/features/projekty/hooks/useFiltry.ts` (`{flaga, szukaj, archiwum}`, debounce szukaj)
+- [x] Liczniki client-side (D10): liczone z pełnego zbioru aktywnych projektów, aktualizowane po każdej zmianie flagi
+- [x] Modyfikuj `ListaPage.tsx` (podpięcie filtrów do `useProjektyData`)
+- [x] Modyfikuj `EmptyState.tsx` (wariant „brak wyników" + „Pokaż wszystkie") — wariant istniał już z U5; podpięty w `ListaPage`
+- [x] Test (unit, test-first liczniki + AND): `Filtry.test.tsx`, `useFiltry.test.ts`
 
 Scenariusze testowe:
-- [ ] Test: filtr „Do rozpisania" pokazuje tylko `rozpisane=false`; analogicznie pozostałe 3 flagi
-- [ ] Test: licznik „Do rozpisania" = liczba projektów z `rozpisane=false`; po zaznaczeniu flagi licznik maleje i projekt znika z aktywnego filtra
-- [ ] Test: Szukaj filtruje po `nazwa` (ilike); łączy się AND z aktywnym filtrem flagi
-- [ ] Test: „Pokaż wszystkie" resetuje do filtra „Wszystkie", czyści szukaj
-- [ ] Test: [E2E] przełączanie filtrów zmienia listę i liczniki; zaznaczenie flagi w aktywnym filtrze usuwa projekt; brak wyników → empty „brak wyników"
+- [x] Test: filtr „Do rozpisania" pokazuje tylko `rozpisane=false`; analogicznie pozostałe 3 flagi
+- [x] Test: licznik „Do rozpisania" = liczba projektów z `rozpisane=false`; po zaznaczeniu flagi licznik maleje i projekt znika z aktywnego filtra
+- [x] Test: Szukaj filtruje po `nazwa` (ilike); łączy się AND z aktywnym filtrem flagi
+- [x] Test: „Pokaż wszystkie" resetuje do filtra „Wszystkie", czyści szukaj
+- [ ] Test: [E2E] przełączanie filtrów zmienia listę i liczniki; zaznaczenie flagi w aktywnym filtrze usuwa projekt; brak wyników → empty „brak wyników" (weryfikacja wizualna w /dev-docs-review)
 
 Weryfikacja:
-- [ ] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone
+- [x] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone
 - [ ] Weryfikacja: [E2E] liczniki aktualizują się po każdej zmianie flagi; aktywny filtr zawęża listę; reset działa
 
 ---

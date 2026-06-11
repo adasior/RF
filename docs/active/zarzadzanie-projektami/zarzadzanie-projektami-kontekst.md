@@ -1,7 +1,7 @@
 # Kontekst: System zarządzania projektami odzieżowymi — MVP
 
 **Branch:** `feature/zarzadzanie-zamowieniami` (nazwa brancha zachowana dla ciągłości git)
-**Ostatnia aktualizacja:** 2026-06-11
+**Ostatnia aktualizacja:** 2026-06-11 (Faza 2 ukończona)
 
 > ⚠ Koncept zmieniony 2026-06-10: z „zamówień" (pojedynczy status główny, kanban,
 > numery ZAM-XXX, terminy) na „projekty odzieżowe" (4 niezależne flagi, tabela/karty,
@@ -113,8 +113,41 @@ Wszystkie 3 Implementation Units Fazy 1 zrealizowane przez subagentów (strategi
 3. Uruchom `node --env-file=.env scripts/verify-rls.mjs` — sukces = exit 0 / „anon SELECT zwrócił 0 wierszy".
 4. Załóż wspólne konto zespołu (email+hasło) w Supabase Auth, przekaż 4 osobom.
 
+### Faza 2 — Dane + widok główny desktop (ukończona 2026-06-11)
+
+3 Implementation Units zrealizowane przez subagentów (strategia: **serial** — łańcuch U4→U5→U6 + współdzielony `ListaPage.tsx`). Quality gate na koniec fazy: typecheck czysty, **69/69 testów zielonych** (22 z Fazy 1 + 47 nowych), lint czysty, build OK.
+
+**U4 — Warstwa danych (feature-builder-data):** `src/lib/schemas.ts` (Zod: `projektSchema`, `nowyProjektInput` bez flag z komunikatami PL, `edycjaProjektuInput`), `queryKeys.ts` (typowany factory + `ProjektyFiltry`), rozszerzony `types.ts` (`NowyProjektInput`/`EdycjaProjektuInput` przez `z.infer` — istniejący `Projekt`/`FlagaKey` nietknięte). Hooki: `useProjektyData` (filtry AND, `created_at desc`, domyślnie `archived_at is null`), `useProjektData` (pojedynczy), `useProjektMutations` (`create`/`update`/`toggleFlaga`/`archive`/`restore`/`hardDelete`; `toggleFlaga` optimistic + rollback + toast błędu + re-throw). MSW mockuje TYLKO Supabase REST. Testy: 25 nowych.
+- **Odchylenia (test-infra, w granicach planu):** `supabase.ts` — leniwy wrapper `global.fetch` (woła bieżący `globalThis.fetch` w momencie żądania) by MSW przechwytywał REST; zero zmiany zachowania w produkcji. `vite.config.ts` — `test.env` z fikcyjnym URL/anon key (klient robi fail-fast przy braku konfiguracji; wartości nie są sekretami). Dodano `src/test/msw-server.ts` + podpięcie w `setup.ts`. Dodatkowy test `useProjektData.test.ts` (reguła: każda nowa funkcja = happy + error).
+- Uwaga dla U6: `useProjektyData({})` = pełen zbiór aktywnych → źródło liczników D10.
+
+**U5 — Tabela desktop + FlagBtn (feature-builder-ui):** `FlagBtn.tsx` (3 warianty `size: table|detail|card`, aktywny zielony+Check / nieaktywny szary+Circle, `aria-pressed`, `stopPropagation`), `ProjektTabela.tsx` (kolumny DESIGN.md, klik wiersza → `/projekt/:id`, 4× true → `opacity-40`), `EmptyState.tsx` (warianty brak-projektow / brak-wynikow), `useIsMobile.ts` (`matchMedia(<768px)` reaktywnie z cleanup). Modyfikacje: `ListaPage` (loading/error/empty/data), `Header` (CTA „+ Nowy projekt"). Toggle desktop natychmiastowy → `toggleFlaga.mutate` + toast „{LABEL}: TAK/NIE"; rollback/toast błędu robi hook. Testy: 10 nowych.
+- **Odchylenie:** shadcn/ui NIE zainicjalizowany — prymitywy (button/table/empty) proste, spójne z istniejącym kodem; uniknięto nowej zależności i `tailwind.config.js` (plan dopuszczał pominięcie). Kategoria-pill kolory jako arbitrary values 1:1 z DESIGN.md (brak tokenu w `@theme`). Brak `cn`/clsx → konkatenacja klas. `FlagBtn size=card|detail` i `useIsMobile` zbudowane teraz, konsumpcja w U8/U9.
+
+**U6 — Belka filtrów + wyszukiwarka (feature-builder-ui):** `Filtry.tsx` (prezentacyjny: 5 linków z `filterLabel`, pill-licznik `tabular-nums`, aktywny `border-accent` terakota, `<search>` + `sr-only` label, `overflow-x-auto`), `useFiltry.ts` (`{flaga, szukaj, archiwum}`, debounce 300ms z cleanup, `reset()`). Liczniki client-side w `useMemo` z pełnego zbioru aktywnych (D10) — reaktywne po toggle. `ListaPage` woła `useProjektyData` dwukrotnie: `({})` dla liczników + `(filtry)` dla tabeli; rozróżnia empty `brak-wynikow` (reset) vs `brak-projektow` (`/nowy`). Testy: 12 nowych.
+- **Odchylenie:** `EmptyState.tsx` nie modyfikowany — wariant `brak-wynikow` + „Pokaż wszystkie" już istniał z U5, tylko podpięty. Pole „Szukaj" bez wymiarów w DESIGN.md → `h-8 w-40` spójnie z resztą inputów.
+
+**Otwarte dla kolejnych faz:**
+- U8 (mobile): `useIsMobile` + `FlagBtn size=card` gotowe; przełączanie tabela↔karty + `ConfirmSheet` (mobile toggle) + układ pola szukaj na mobile do rozstrzygnięcia.
+- E2E Fazy 2 (klik flagi, filtry, liczniki, empty states) — SKIP do `/dev-docs-review` (wymaga `.env`/Supabase, Operator TODO §110).
+
+### Review Fazy 1 (2026-06-11)
+
+Multi-axis code review (Standards + Spec) — raport: `review-faza-1.md`. Gate: **⚠️ KONTYNUUJ
+Z ZASTRZEŻENIAMI** (0× P1, 3× P2, 3× P3). Quality gate zweryfikowany na żywo: typecheck/lint
+czyste, test 22/22, build OK. **Zgodność ze spec: pełna** — `KATEGORIE`/`OSOBY`/`FLAGI` i schemat
+1:1 ze SPEC v5; nieaktualna sekcja API-Routes SPEC poprawnie pominięta (D1/D2). Zero scope creep.
+
+**Kluczowe wnioski:**
+- Wszystkie 3× P2 to **zablokowane E2E** (brak `.env`/Supabase) — nie defekty kodu; uruchomić
+  po Operator TODO. U4 (warstwa danych) nie zależy od E2E Fazy 1 → można kontynuować.
+- P3 bezpieczeństwa do zapamiętania przy deployu: `RLS using(true)` = każdy user Supabase Auth
+  ma pełny CRUD na PII → **operator musi wyłączyć publiczne signups** (model wspólnego konta D3).
+- P3 nity: nazewnictwo boolean bez prefiksu `is/has`; nietestowana gałąź guardu w `LoginPage`.
+
 ## Źródła
 - Specyfikacja funkcjonalna: `SPEC_projekty.md` (v5, root)
 - Specyfikacja wizualna: `DESIGN.md` (v5, root)
 - Plan: `docs/active/zarzadzanie-projektami/zarzadzanie-projektami-plan.md`
 - Zadania: `docs/active/zarzadzanie-projektami/zarzadzanie-projektami-zadania.md`
+- Review Fazy 1: `docs/active/zarzadzanie-projektami/review-faza-1.md`
