@@ -1,13 +1,15 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { supabase } from '@/lib/supabase';
 
 /**
- * Nagłówek aplikacji: logo + wylogowanie.
- * Pełna nawigacja/CTA „+ Nowy projekt" dochodzi w późniejszych IU (U5/U8).
+ * Nagłówek aplikacji: logo + CTA „+ Nowy projekt" + wylogowanie.
+ * CTA na mobile zastępowany przez FAB (U8) — tu zawsze widoczny (desktop-first scope U5).
  */
 export function Header() {
+  const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
 
   const handleSignOut = async (): Promise<void> => {
@@ -26,14 +28,23 @@ export function Header() {
       <span className="font-serif text-lg italic text-text-primary">
         Pracownia <span className="text-accent">·</span> projekty
       </span>
-      <button
-        type="button"
-        onClick={handleSignOut}
-        disabled={signingOut}
-        className="rounded-flag border border-border px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus disabled:opacity-60"
-      >
-        Wyloguj
-      </button>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => navigate('/nowy')}
+          className="rounded-pill bg-accent px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+        >
+          + Nowy projekt
+        </button>
+        <button
+          type="button"
+          onClick={handleSignOut}
+          disabled={signingOut}
+          className="rounded-flag border border-border px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus disabled:opacity-60"
+        >
+          Wyloguj
+        </button>
+      </div>
     </header>
   );
 }
