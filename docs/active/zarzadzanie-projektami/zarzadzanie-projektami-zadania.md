@@ -1,7 +1,7 @@
 # Zadania: System zarządzania projektami odzieżowymi — MVP
 
 **Branch:** `feature/zarzadzanie-zamowieniami` (nazwa zachowana dla ciągłości git)
-**Ostatnia aktualizacja:** 2026-06-11 (poprawki po review Fazy 1 i 2 wykonane)
+**Ostatnia aktualizacja:** 2026-06-12 (Faza 3 ukończona — U7/U8/U9)
 
 Legenda: `Test:` = scenariusz testowy, `Weryfikacja:` = kryterium weryfikacji,
 `Operator:` = krok poza kodem (człowiek).
@@ -246,25 +246,25 @@ Weryfikacja:
 **Delegate to:** feature-builder-ui · **Nakład:** M · **Zależności:** U4, U1
 
 Implementacja:
-- [ ] `src/features/projekty/components/ProjektForm.tsx` (parametryzowany `create`|`edit` — reuse w U9; pola: Nazwa* → Kategoria*+Kontakt (grid 2→1 kol) → Dodał* → Uwagi; BEZ flag)
-- [ ] `src/features/projekty/components/OsobaSegmented.tsx` (segmented control z `OSOBY`, radiogroup, WCAG 2.2)
-- [ ] Kategoria: natywny `<select>` z `KATEGORIE`; wybór „Inne…" → input tekstowy → wartość trafia do `kategoria` (D9)
-- [ ] Modyfikuj `NowyProjektPage.tsx`; pola min-height 48px (mobile-first)
-- [ ] RHF + `zodResolver(nowyProjektInput)`, komunikaty PL; po sukcesie invalidate + redirect `/` + toast „Projekt dodany"
-- [ ] Test (unit, test-first walidacja): `ProjektForm.test.tsx`, `OsobaSegmented.test.tsx`
+- [x] `src/features/projekty/components/ProjektForm.tsx` (parametryzowany `create`|`edit` — reuse w U9; pola: Nazwa* → Kategoria*+Kontakt (grid 2→1 kol) → Dodał* → Uwagi; BEZ flag)
+- [x] `src/features/projekty/components/OsobaSegmented.tsx` (segmented control z `OSOBY`, radiogroup, WCAG 2.2)
+- [x] Kategoria: natywny `<select>` z `KATEGORIE`; wybór „Inne…" → input tekstowy → wartość trafia do `kategoria` (D9)
+- [x] Modyfikuj `NowyProjektPage.tsx`; pola min-height 48px (mobile-first)
+- [x] RHF + zodResolver, komunikaty PL; po sukcesie invalidate + redirect `/` + toast „Projekt dodany" — ⚠ resolver na lokalnym `projektFormSchema` (pochodna `nowyProjektInput`, reuse shape + komunikatów): czysty `nowyProjektInput` nie obsłużyłby pola „Inne…"/mapowania `''→null`; `create` w hooku nadal waliduje `nowyProjektInput`
+- [x] Test (unit, test-first walidacja): `ProjektForm.test.tsx`, `OsobaSegmented.test.tsx` + dodatkowy `NowyProjektPage.test.tsx` (scenariusze create+nawigacja wymagają MSW+routera na poziomie strony — precedens `ListaPage.test.tsx`)
 
 Scenariusze testowe:
-- [ ] Test: submit bez wymaganych pól → błędy PL pod nazwa/kategoria/dodał; create NIE wywołane
-- [ ] Test: wybór „Inne…" pokazuje input; wpisana wartość trafia jako `kategoria` do create
-- [ ] Test: poprawny submit → create z 4 flagami `false`; po sukcesie nawigacja `/`
-- [ ] Test: `OsobaSegmented` zaznacza wybraną osobę, obsługiwalny klawiaturą (radiogroup)
-- [ ] Test: [E2E] happy path: wypełnij → Zapisz → redirect + toast + wiersz w tabeli
-- [ ] Test: [E2E] pusty submit → inline błędy PL
+- [x] Test: submit bez wymaganych pól → błędy PL pod nazwa/kategoria/dodał; create NIE wywołane
+- [x] Test: wybór „Inne…" pokazuje input; wpisana wartość trafia jako `kategoria` do create (+ „Inne…" bez wpisania blokuje submit)
+- [x] Test: poprawny submit → create z 4 flagami `false`; po sukcesie nawigacja `/` (+ error case: 500 → toast błędu, user zostaje na formularzu)
+- [x] Test: `OsobaSegmented` zaznacza wybraną osobę, obsługiwalny klawiaturą (radiogroup)
+- [ ] Test: [E2E] happy path: wypełnij → Zapisz → redirect + toast + wiersz w tabeli (weryfikacja wizualna w /dev-docs-review)
+- [ ] Test: [E2E] pusty submit → inline błędy PL (weryfikacja wizualna w /dev-docs-review)
 
 Weryfikacja:
-- [ ] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone
-- [ ] Weryfikacja: [E2E] dodanie projektu → redirect `/` + toast + nowy wiersz
-- [ ] Weryfikacja: [E2E] walidacja blokuje pusty submit z komunikatami PL; „Inne…" pokazuje input
+- [x] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone (97/97 po IU-7)
+- [ ] Weryfikacja: [E2E] dodanie projektu → redirect `/` + toast + nowy wiersz (SKIP — brak `.env`/Supabase, Operator TODO)
+- [ ] Weryfikacja: [E2E] walidacja blokuje pusty submit z komunikatami PL; „Inne…" pokazuje input (SKIP — brak `.env`/Supabase, Operator TODO)
 
 ---
 
@@ -272,25 +272,26 @@ Weryfikacja:
 **Delegate to:** feature-builder-ui · **Nakład:** L · **Zależności:** U5, U6
 
 Implementacja:
-- [ ] `src/features/projekty/components/ProjektKarty.tsx` (karta: wiersz 1 kategoria pill + data względna; wiersz 2 nazwa; flagi w gridzie 2×2 `FlagBtn size='card'`; klik karty poza flagami → szczegóły; 4× true → `opacity 0.4`)
-- [ ] `src/features/projekty/components/ConfirmSheet.tsx` (overlay + bottom sheet `sheetUp`; tytuł „Zaznaczyć/Cofnąć flagę?"; nazwa; podgląd `FlagBtn` po zmianie; „Tak, zmień" / „Anuluj"; klik overlay = anuluj)
-- [ ] `src/components/Fab.tsx` (terakota, okrągły, `fixed bottom-right`, `Plus` 22, nawiguje do `/nowy`)
-- [ ] Modyfikuj `ListaPage.tsx` (render tabela ≥768px / karty <768px wg `useIsMobile`)
-- [ ] Modyfikuj `Header.tsx` (CTA „+ Nowy projekt" ↔ FAB wg breakpointu)
-- [ ] Mobile toggle flagi: klik FlagBtn → `ConfirmSheet`; „Tak, zmień" → `toggleFlaga` (ta sama ścieżka co desktop) + toast
-- [ ] Test (unit): `ProjektKarty.test.tsx`, `ConfirmSheet.test.tsx`, `Fab.test.tsx`
+- [x] `src/features/projekty/components/ProjektKarty.tsx` (karta: wiersz 1 kategoria pill + data względna; wiersz 2 nazwa; flagi w gridzie 2×2 `FlagBtn size='card'`; klik karty poza flagami → szczegóły; 4× true → `opacity 0.4`)
+- [x] `src/features/projekty/components/ConfirmSheet.tsx` (overlay + bottom sheet `sheetUp` 200ms + `prefers-reduced-motion`; tytuł „Zaznaczyć/Cofnąć flagę?"; nazwa; podgląd `FlagBtn` po zmianie; „Tak, zmień" / „Anuluj"; klik overlay = anuluj; `role="dialog"` + `aria-modal`)
+- [x] `src/components/Fab.tsx` (terakota 52×52, okrągły, `fixed bottom-right`, `Plus` 22, nawiguje do `/nowy`)
+- [x] Modyfikuj `ListaPage.tsx` (render tabela ≥768px / karty <768px wg `useIsMobile`)
+- [x] Modyfikuj `Header.tsx` (CTA „+ Nowy projekt" ↔ FAB wg breakpointu)
+- [x] Mobile toggle flagi: klik FlagBtn → `ConfirmSheet`; „Tak, zmień" → `toggleFlaga` (ta sama ścieżka co desktop) + toast
+- [x] Test (unit): `ProjektKarty.test.tsx`, `ConfirmSheet.test.tsx`, `Fab.test.tsx` + 2 testy wiringu breakpointu w `ListaPage.test.tsx`
+- ⚠ `src/test/setup.ts` — dodany stub `window.matchMedia` (jsdom go nie ma; bez stubu testy `ListaPage`/`Header` padają po wpięciu `useIsMobile`); domyślnie desktop, testy mobile nadpisują przez `vi.stubGlobal`. Test-infra, zero wpływu na produkcję.
 
 Scenariusze testowe:
-- [ ] Test: na mobile klik flagi NIE zmienia jej od razu — otwiera `ConfirmSheet` z podglądem stanu po zmianie
-- [ ] Test: „Tak, zmień" wywołuje `toggleFlaga`; „Anuluj"/klik overlay → brak mutacji, sheet zamknięty
-- [ ] Test: karta z 4 flagami true ma przygaszenie; FAB nawiguje do `/nowy`
-- [ ] Test: [E2E 375px] karty 2×2; klik flagi → sheet → „Tak, zmień" → zmiana + toast; klik karty → szczegóły; FAB widoczny, CTA ukryte
-- [ ] Test: [E2E 1280px] tabela zamiast kart, CTA w headerze zamiast FAB
+- [x] Test: na mobile klik flagi NIE zmienia jej od razu — otwiera `ConfirmSheet` z podglądem stanu po zmianie
+- [x] Test: „Tak, zmień" wywołuje `toggleFlaga`; „Anuluj"/klik overlay → brak mutacji, sheet zamknięty
+- [x] Test: karta z 4 flagami true ma przygaszenie; FAB nawiguje do `/nowy`
+- [ ] Test: [E2E 375px] karty 2×2; klik flagi → sheet → „Tak, zmień" → zmiana + toast; klik karty → szczegóły; FAB widoczny, CTA ukryte (weryfikacja wizualna w /dev-docs-review)
+- [ ] Test: [E2E 1280px] tabela zamiast kart, CTA w headerze zamiast FAB (weryfikacja wizualna w /dev-docs-review)
 
 Weryfikacja:
-- [ ] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone
-- [ ] Weryfikacja: [E2E 375px] karty 2×2 + ConfirmSheet potwierdza zmianę flagi (screenshot przed/po)
-- [ ] Weryfikacja: [E2E] zmiana szerokości okna przełącza tabela↔karty (matchMedia reaktywnie)
+- [x] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone (114/114 po IU-8)
+- [ ] Weryfikacja: [E2E 375px] karty 2×2 + ConfirmSheet potwierdza zmianę flagi (screenshot przed/po) (SKIP — brak `.env`/Supabase, Operator TODO)
+- [ ] Weryfikacja: [E2E] zmiana szerokości okna przełącza tabela↔karty (matchMedia reaktywnie) (SKIP — brak `.env`/Supabase, Operator TODO)
 
 Operator:
 - [ ] QA weryfikuje dotyk/scroll, ConfirmSheet i FAB na realnym urządzeniu (iOS + Android)
@@ -301,25 +302,25 @@ Operator:
 **Delegate to:** feature-builder-ui · **Nakład:** M · **Zależności:** U4, U5, U7
 
 Implementacja:
-- [ ] Modyfikuj `ProjektSzczegolyPage.tsx`, `NotFoundPage.tsx`
-- [ ] `src/features/projekty/components/SzczegolyWidok.tsx` (header Wróć | Edytuj+Usuń; kategoria pill + data pełna; nazwa 22px; rząd dużych `FlagBtn size='detail'` z pełnymi etykietami — druga „PRZESŁANY HAFT/SITO"; grid 3 kol Kontakt/Dodał/Ostatnia zmiana; Uwagi pełna szerokość)
-- [ ] Flagi w szczegółach: desktop natychmiast / mobile `ConfirmSheet` (reuse U8)
-- [ ] Tryb edycji = `ProjektForm` mode `edit` (wszystkie pola wypełnione; bez flag)
-- [ ] 404: get → brak rekordu → `NotFoundPage` + link do `/`
-- [ ] Przycisk „Usuń" (kosz) → placeholder/archive (pełny dialog w U10)
-- [ ] Test (unit, test-first 404 + edycja): `SzczegolyWidok.test.tsx`, `ProjektSzczegolyPage.test.tsx`
+- [x] Modyfikuj `ProjektSzczegolyPage.tsx`, `NotFoundPage.tsx` (NotFoundPage: opcjonalne propsy `tytul`/`opis`, defaulty = copy trasy `*` — bez drugiej strony 404)
+- [x] `src/features/projekty/components/SzczegolyWidok.tsx` (header Wróć | Edytuj+Usuń; kategoria pill + data pełna; nazwa 22px; rząd dużych `FlagBtn size='detail'` z pełnymi etykietami — druga „PRZESŁANY HAFT/SITO" przez `columnLabel ?? label`; grid 3 kol Kontakt/Dodał/Ostatnia zmiana; Uwagi pełna szerokość)
+- [x] Flagi w szczegółach: desktop natychmiast / mobile `ConfirmSheet` (reuse U8 bez zmian, `useIsMobile` w jednym komponencie)
+- [x] Tryb edycji = `ProjektForm` mode `edit` (wszystkie pola wypełnione; bez flag — test asertuje brak `rozpisane` w body PATCH)
+- [x] 404: get → brak rekordu (PostgREST `PGRST116`, type guard bez `as`) → `NotFoundPage` + link do `/`; inne błędy GET → osobny stan błędu
+- [x] Przycisk „Usuń" (kosz) → `archive.mutate` + toast „Projekt usunięty" + powrót na `/` (pełny dialog w U10)
+- [x] Test (unit, test-first 404 + edycja): `SzczegolyWidok.test.tsx` (7), `ProjektSzczegolyPage.test.tsx` (5)
 
 Scenariusze testowe:
-- [ ] Test: read-only renderuje wszystkie pola w układzie `DESIGN.md` (data pełna, nie względna)
-- [ ] Test: druga flaga w szczegółach ma pełną etykietę „PRZESŁANY HAFT/SITO"
-- [ ] Test: Edytuj → zmiana pola + zapis → update; Anuluj → brak update, powrót do read-only
-- [ ] Test: get zwraca brak → render strony 404 z linkiem do `/`
-- [ ] Test: [E2E] pełna ścieżka edycji + toast „Zmiany zapisane"; nieistniejące id → 404 + link działa
+- [x] Test: read-only renderuje wszystkie pola w układzie `DESIGN.md` (data pełna, nie względna)
+- [x] Test: druga flaga w szczegółach ma pełną etykietę „PRZESŁANY HAFT/SITO"
+- [x] Test: Edytuj → zmiana pola + zapis → update; Anuluj → brak update, powrót do read-only
+- [x] Test: get zwraca brak → render strony 404 z linkiem do `/`
+- [ ] Test: [E2E] pełna ścieżka edycji + toast „Zmiany zapisane"; nieistniejące id → 404 + link działa (weryfikacja wizualna w /dev-docs-review)
 
 Weryfikacja:
-- [ ] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone
-- [ ] Weryfikacja: [E2E] edycja pól zapisuje się i widoczna po reloadzie
-- [ ] Weryfikacja: [E2E] `/projekt/nieistniejace` → „Nie znaleziono projektu"
+- [x] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone (126/126 po IU-9)
+- [ ] Weryfikacja: [E2E] edycja pól zapisuje się i widoczna po reloadzie (SKIP — brak `.env`/Supabase, Operator TODO)
+- [ ] Weryfikacja: [E2E] `/projekt/nieistniejace` → „Nie znaleziono projektu" (SKIP — brak `.env`/Supabase, Operator TODO)
 
 ---
 

@@ -1,7 +1,7 @@
 # Kontekst: System zarządzania projektami odzieżowymi — MVP
 
 **Branch:** `feature/zarzadzanie-zamowieniami` (nazwa brancha zachowana dla ciągłości git)
-**Ostatnia aktualizacja:** 2026-06-11 (poprawki po review Fazy 1 i 2 wykonane)
+**Ostatnia aktualizacja:** 2026-06-12 (Faza 3 ukończona — U7/U8/U9)
 
 > ⚠ Koncept zmieniony 2026-06-10: z „zamówień" (pojedynczy status główny, kanban,
 > numery ZAM-XXX, terminy) na „projekty odzieżowe" (4 niezależne flagi, tabela/karty,
@@ -131,6 +131,59 @@ Wszystkie 3 Implementation Units Fazy 1 zrealizowane przez subagentów (strategi
 **Otwarte dla kolejnych faz:**
 - U8 (mobile): `useIsMobile` + `FlagBtn size=card` gotowe; przełączanie tabela↔karty + `ConfirmSheet` (mobile toggle) + układ pola szukaj na mobile do rozstrzygnięcia.
 - E2E Fazy 2 (klik flagi, filtry, liczniki, empty states) — SKIP do `/dev-docs-review` (wymaga `.env`/Supabase, Operator TODO §110).
+
+### Faza 3 — Formularz, mobile, szczegóły (ukończona 2026-06-12)
+
+3 Implementation Units zrealizowane przez subagentów `feature-builder-ui` (strategia: **serial**
+U7→U8→U9 — U9 reuse'uje `ProjektForm` z U7 i `ConfirmSheet` z U8; U7/U8 dzieliły ryzyko wspólnych
+plików). Quality gate na koniec fazy (uruchomiony przez orkiestratora na całości): typecheck czysty,
+**126/126 testów** (24 pliki; 85 → 126, +41), lint czysty, build OK (każda strona w osobnym lazy chunku).
+
+**U7 — Formularz nowego projektu (feature-builder-ui):** `ProjektForm.tsx` (mode `create`|`edit`,
+pola wg DESIGN.md: Nazwa → Kategoria+Kontakt grid 2→1 → Dodał → Uwagi, BEZ flag, min-h 48px),
+`OsobaSegmented.tsx` (radiogroup z natywnymi radio `sr-only` w label — klawiatura/roving focus
+za darmo), kategoria „Inne…" → input (D9, sentinel `KATEGORIA_INNE` zsynchronizowany z `config.ts`),
+`NowyProjektPage` (po sukcesie toast „Projekt dodany" + redirect `/`; toast sukcesu w stronie —
+hook toastuje tylko błędy). Testy: +12 (97/97).
+- Decyzja: `zodResolver` na lokalnym `projektFormSchema` (pochodna `nowyProjektInput` — reuse shape
+  i komunikatów PL + `kategoriaInna` w `superRefine`); czysty `nowyProjektInput` nie obsłużyłby
+  „Inne…"/mapowania `''→null`. Podwójna granica zachowana — `create` w hooku nadal waliduje Zod.
+- **Odchylenie:** dodatkowy `NowyProjektPage.test.tsx` (konwencja repo: MSW + router na poziomie
+  strony, nie mock hooków). W granicach planu.
+
+**U8 — Karty mobile + ConfirmSheet + FAB (feature-builder-ui):** `ProjektKarty.tsx` (pill+data
+względna / nazwa / grid 2×2 `FlagBtn size='card'`, 4× true → `opacity-40`, klik karty → szczegóły),
+`ConfirmSheet.tsx` (overlay + `animate-sheet-up` 200ms + `prefers-reduced-motion`, podgląd flagi
+PO zmianie jako `FlagBtn size='detail'` w `pointer-events-none`, klik overlay = anuluj, `role="dialog"`),
+`Fab.tsx` (terakota 52×52 → `/nowy`). `ListaPage`: tabela ≥768px / karty <768px (`useIsMobile`);
+`Header`: CTA ↔ FAB. Mobile toggle = sheet → „Tak, zmień" → ta sama mutacja `toggleFlaga` co desktop
+(D5) + toast; sheet zamyka się natychmiast po potwierdzeniu (optimistic). Testy: +17 (114/114).
+- **Odchylenie (test-infra):** stub `window.matchMedia` w `src/test/setup.ts` (jsdom go nie ma);
+  domyślnie desktop, testy mobile nadpisują `vi.stubGlobal`. Zero wpływu na produkcję.
+- Rewizja podwójnego `useProjektyData` (prośba review F2): **zostawione 2×** — filtrowanie
+  client-side zmieniałoby semantykę warstwy danych (`ilike` serwerowe, escapeLike, archiwum)
+  i kontrakty testów U4/U6 → poza UI-scope U8. Ewentualna zmiana = zadanie dla feature-builder-data.
+- `isKompletny` zduplikowany z `ProjektTabela` (3 linie) — atomowość > DRY przy tej skali.
+- ConfirmSheet bez Escape/focus-trap (checklist nie wymagał) — kandydat do U12 (polish), jeśli QA podniesie.
+
+**U9 — Szczegóły + edycja + 404 (feature-builder-ui):** `SzczegolyWidok.tsx` (header Wróć |
+Edytuj+Usuń; pomiary 1:1 z DESIGN.md: nazwa 22px, etykiety 10px uppercase, grid 3→1 Kontakt/Dodał/
+Ostatnia zmiana, Uwagi pełna szerokość; flagi `size='detail'` z pełną etykietą przez
+`columnLabel ?? label` → „PRZESŁANY HAFT/SITO" bez nowego pola w config). Flagi: desktop natychmiast /
+mobile `ConfirmSheet` (reuse U8 bez zmian). Edycja = `ProjektForm mode='edit'` (defaulty z projektu,
+kategoria spoza listy → auto „Inne…"; PATCH bez flag — asertowane testem); po sukcesie toast „Zmiany
+zapisane", cache `projekt(id)` patchowany przez `update.onSuccess` hooka. 404: type guard po kodzie
+PostgREST `PGRST116` (`.single()` bez wiersza) → `NotFoundPage` z propsami `tytul`/`opis`
+(„Nie znaleziono projektu") + link `/`; inne błędy GET → osobny stan błędu. „Usuń" =
+`archive.mutate` + toast „Projekt usunięty" + powrót `/` (placeholder — `UsunDialog` w U10).
+Testy: +12 (126/126). **Odchylenia od planu: Brak.**
+
+**Otwarte dla Fazy 4:**
+- U10: podmienia `handleUsun` w `ProjektSzczegolyPage` na `UsunDialog` (archive + toast już podpięte).
+- U12: ewentualny Escape/focus-trap w ConfirmSheet; grid formularza 2→1 przez `md:` (viewport,
+  nie container query) — do rewizji przy dopinaniu responsywności.
+- E2E Fazy 3 (formularz, karty 375px, ConfirmSheet, edycja, 404) — SKIP do `/dev-docs-review`
+  (blokada na Operator TODO §110 — brak `.env`/Supabase).
 
 ### Review Fazy 1 (2026-06-11)
 
