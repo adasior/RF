@@ -6,18 +6,21 @@ import { useProjektyData } from '@/hooks/useProjektyData';
 
 import { EmptyState } from '@/features/projekty/components/EmptyState';
 import { Filtry } from '@/features/projekty/components/Filtry';
+import { ProjektKarty } from '@/features/projekty/components/ProjektKarty';
 import { ProjektTabela } from '@/features/projekty/components/ProjektTabela';
 import { useFiltry } from '@/features/projekty/hooks/useFiltry';
+import { useIsMobile } from '@/features/projekty/hooks/useIsMobile';
 
 /**
- * Widok główny (U5 + U6): belka filtrów + tabela desktop aktywnych projektów.
+ * Widok główny (U5 + U6 + U8): belka filtrów + lista aktywnych projektów.
+ * - Tabela desktop ≥768px / karty 2×2 mobile <768px (`useIsMobile`, reaktywnie).
  * - Liczniki (D10): liczone client-side z PEŁNEGO zbioru aktywnych projektów.
- * - Tabela: zbiór po nałożeniu filtra flagi + szukaj (AND).
+ * - Lista: zbiór po nałożeniu filtra flagi + szukaj (AND).
  * - Pusto: rozróżnienie „brak projektów" vs „brak wyników filtra".
- * Karty mobile (U8) dochodzą w kolejnym IU.
  */
 export function ListaPage() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const { filtry, szukajInput, setFlaga, setSzukaj, reset } = useFiltry();
 
   // Pełny zbiór aktywnych projektów — źródło liczników (niezależny od aktywnego filtra).
@@ -62,9 +65,12 @@ export function ListaPage() {
           />
         )}
 
-        {!isLoading && !error && projekty && projekty.length > 0 && (
-          <ProjektTabela projekty={projekty} />
-        )}
+        {!isLoading && !error && projekty && projekty.length > 0 &&
+          (isMobile ? (
+            <ProjektKarty projekty={projekty} />
+          ) : (
+            <ProjektTabela projekty={projekty} />
+          ))}
       </main>
     </div>
   );

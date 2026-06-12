@@ -3,8 +3,9 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import type { Projekt } from '@/lib/types';
 import { PROJEKTY_REST_URL, server } from '@/test/msw-server';
 
 import { ListaPage } from './ListaPage';
@@ -25,6 +26,69 @@ function renderListaPage() {
     </QueryClientProvider>,
   );
 }
+
+function projektFixture(): Projekt {
+  return {
+    id: '11111111-1111-1111-1111-111111111111',
+    nazwa: 'Koszulka klubowa',
+    kategoria: 'T-shirt',
+    rozpisane: false,
+    przeslany: false,
+    sprawdzony: false,
+    wydrukowany: false,
+    kontakt: null,
+    uwagi: null,
+    dodal: 'Ania',
+    archived_at: null,
+    created_at: '2026-06-11T10:00:00Z',
+    updated_at: '2026-06-11T10:00:00Z',
+  };
+}
+
+/** Stub matchMedia z kontrolą `matches` — przełącza breakpoint w `useIsMobile`. */
+function stubMatchMedia(matches: boolean): void {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn().mockReturnValue({
+      matches,
+      media: '(max-width: 767px)',
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    } as unknown as MediaQueryList),
+  );
+}
+
+describe('ListaPage — breakpoint mobile (U8)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('na mobile renderuje karty zamiast tabeli i FAB zamiast CTA „+ Nowy projekt"', async () => {
+    stubMatchMedia(true);
+    server.use(http.get(PROJEKTY_REST_URL, () => HttpResponse.json([projektFixture()])));
+
+    renderListaPage();
+
+    expect(await screen.findByText('Koszulka klubowa')).toBeInTheDocument();
+    // Karty zamiast tabeli.
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    // FAB zamiast CTA w headerze.
+    expect(screen.getByRole('button', { name: 'Nowy projekt' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '+ Nowy projekt' })).not.toBeInTheDocument();
+  });
+
+  it('na desktopie renderuje tabelę i CTA w headerze (bez FAB)', async () => {
+    stubMatchMedia(false);
+    server.use(http.get(PROJEKTY_REST_URL, () => HttpResponse.json([projektFixture()])));
+
+    renderListaPage();
+
+    expect(await screen.findByText('Koszulka klubowa')).toBeInTheDocument();
+    expect(screen.getByRole('table')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '+ Nowy projekt' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Nowy projekt' })).not.toBeInTheDocument();
+  });
+});
 
 describe('ListaPage — stan pusty', () => {
   it('bez aktywnego filtra: wariant brak-projektow, CTA nawiguje do /nowy', async () => {
