@@ -10,6 +10,23 @@ import { PROJEKTY_REST_URL, server } from '@/test/msw-server';
 
 import { ListaPage } from './ListaPage';
 
+// Realtime (WebSocket) nie idzie przez MSW (mockuje tylko REST). Stub kanału — mockujemy
+// TYLKO zewnętrzny transport Realtime, zachowując realny klient (REST przez MSW).
+vi.mock('@/lib/supabase', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/supabase')>('@/lib/supabase');
+  const fakeChannel = {
+    on: () => fakeChannel,
+    subscribe: () => fakeChannel,
+  };
+  return {
+    ...actual,
+    supabase: Object.assign(actual.supabase, {
+      channel: () => fakeChannel,
+      removeChannel: () => undefined,
+    }),
+  };
+});
+
 function renderListaPage() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },

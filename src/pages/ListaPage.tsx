@@ -10,6 +10,7 @@ import { ProjektKarty } from '@/features/projekty/components/ProjektKarty';
 import { ProjektTabela } from '@/features/projekty/components/ProjektTabela';
 import { useFiltry } from '@/features/projekty/hooks/useFiltry';
 import { useIsMobile } from '@/features/projekty/hooks/useIsMobile';
+import { useRealtimeProjekty } from '@/features/projekty/hooks/useRealtimeProjekty';
 
 /**
  * Widok główny (U5 + U6 + U8): belka filtrów + lista aktywnych projektów.
@@ -21,7 +22,10 @@ import { useIsMobile } from '@/features/projekty/hooks/useIsMobile';
 export function ListaPage() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { filtry, szukajInput, setFlaga, setSzukaj, reset } = useFiltry();
+  const { filtry, szukajInput, setFlaga, setSzukaj, setArchiwum, reset } = useFiltry();
+
+  // Synchronizacja na żywo (D7): zmiany całego zespołu reconciliują cache bez ręcznego odświeżania.
+  useRealtimeProjekty();
 
   // Pełny zbiór aktywnych projektów — źródło liczników (niezależny od aktywnego filtra).
   const { data: wszystkie } = useProjektyData({});
@@ -33,7 +37,15 @@ export function ListaPage() {
     error,
   } = useProjektyData(filtry);
 
-  const isFiltrAktywny = filtry.flaga !== undefined || (filtry.szukaj ?? '').trim().length > 0;
+  const isFiltrAktywny =
+    filtry.flaga !== undefined ||
+    (filtry.szukaj ?? '').trim().length > 0 ||
+    (filtry.archiwum ?? false);
+
+  const handleResetFiltrow = (): void => {
+    setArchiwum(false);
+    reset();
+  };
 
   return (
     <div className="min-h-dvh bg-bg">
@@ -43,8 +55,10 @@ export function ListaPage() {
         projekty={wszystkie ?? []}
         flagaAktywna={filtry.flaga}
         szukaj={szukajInput}
+        archiwum={filtry.archiwum ?? false}
         onFlagaChange={setFlaga}
         onSzukajChange={setSzukaj}
+        onArchiwumChange={setArchiwum}
       />
 
       <main>
@@ -61,15 +75,15 @@ export function ListaPage() {
         {!isLoading && !error && projekty && projekty.length === 0 && (
           <EmptyState
             variant={isFiltrAktywny ? 'brak-wynikow' : 'brak-projektow'}
-            onAction={isFiltrAktywny ? reset : () => navigate('/nowy')}
+            onAction={isFiltrAktywny ? handleResetFiltrow : () => navigate('/nowy')}
           />
         )}
 
         {!isLoading && !error && projekty && projekty.length > 0 &&
           (isMobile ? (
-            <ProjektKarty projekty={projekty} />
+            <ProjektKarty projekty={projekty} archiwum={filtry.archiwum ?? false} />
           ) : (
-            <ProjektTabela projekty={projekty} />
+            <ProjektTabela projekty={projekty} archiwum={filtry.archiwum ?? false} />
           ))}
       </main>
     </div>
