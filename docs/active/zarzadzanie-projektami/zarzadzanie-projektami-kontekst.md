@@ -289,7 +289,19 @@ typecheck ✅, test **127/127** (+1 nowy), lint ✅, build ✅.
 
 **Bez akcji (świadomie):** kategoria-pill hardcoded hexy (pre-existing U5/U6), `Header.signOut`
 bezpośrednio (pre-existing), rozbieżność copy ConfirmSheet DESIGN.md vs SPEC (impl za SPEC — poprawnie).
-6× E2E nadal SKIP (Operator TODO §110).
+
+### Operator TODO §110 + E2E Fazy 3 wykonane (2026-06-13)
+
+Operator skonfigurował Supabase (projekt `jvrcshtkczzjporteybk`, migracje 0001-0003, RLS deny-all
+anon potwierdzone skryptem, wspólne konto `kontakt@radicalfans.pl`, publiczne signupy OFF, Realtime).
+`.env` uzupełniony (gitignored). **Pierwsze realne logowanie ujawniło bug:** `/login` nie przekierowywał
+na `/` po zalogowaniu → fix `b16e39f` (Navigate gdy sesja istnieje) + test regresyjny (128/128).
+
+**6× E2E Fazy 3 przeprowadzone na żywo** (agent-browser, zalogowana sesja, realna baza) — **wszystkie PASS**.
+Raport + tabela w `review-faza-3.md` (§„Wyniki E2E na żywo"); zrzuty w `e2e-faza-3/` (00-12). Potwierdzono
+też fix UUID-guard (P2 #1) i round-trip custom kategorii „Inne…" (ścieżka P2 #2 — działa w praktyce).
+OSOBY w `config.ts` to nadal placeholder (Ania/Bartek/Kasia/Marek) — operator podmienia na realny zespół
+przed produkcją.
 
 ## Źródła
 - Specyfikacja funkcjonalna: `SPEC_projekty.md` (v5, root)

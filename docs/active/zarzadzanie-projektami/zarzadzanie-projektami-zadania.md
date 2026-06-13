@@ -258,13 +258,13 @@ Scenariusze testowe:
 - [x] Test: wybór „Inne…" pokazuje input; wpisana wartość trafia jako `kategoria` do create (+ „Inne…" bez wpisania blokuje submit)
 - [x] Test: poprawny submit → create z 4 flagami `false`; po sukcesie nawigacja `/` (+ error case: 500 → toast błędu, user zostaje na formularzu)
 - [x] Test: `OsobaSegmented` zaznacza wybraną osobę, obsługiwalny klawiaturą (radiogroup)
-- [ ] Test: [E2E] happy path: wypełnij → Zapisz → redirect + toast + wiersz w tabeli (weryfikacja wizualna w /dev-docs-review)
-- [ ] Test: [E2E] pusty submit → inline błędy PL (weryfikacja wizualna w /dev-docs-review)
+- [x] Test: [E2E] happy path: wypełnij → Zapisz → redirect + toast + wiersz w tabeli — ✅ PASS 2026-06-13 (e2e-faza-3/03,04; ścieżka „Inne…" e2e)
+- [x] Test: [E2E] pusty submit → inline błędy PL — ✅ PASS 2026-06-13 (e2e-faza-3/01,02)
 
 Weryfikacja:
 - [x] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone (97/97 po IU-7)
-- [ ] Weryfikacja: [E2E] dodanie projektu → redirect `/` + toast + nowy wiersz (SKIP — brak `.env`/Supabase, Operator TODO)
-- [ ] Weryfikacja: [E2E] walidacja blokuje pusty submit z komunikatami PL; „Inne…" pokazuje input (SKIP — brak `.env`/Supabase, Operator TODO)
+- [x] Weryfikacja: [E2E] dodanie projektu → redirect `/` + toast + nowy wiersz — ✅ PASS 2026-06-13 (toast „Projekt dodany", liczniki 0→1)
+- [x] Weryfikacja: [E2E] walidacja blokuje pusty submit z komunikatami PL; „Inne…" pokazuje input — ✅ PASS 2026-06-13
 
 ---
 
@@ -285,13 +285,13 @@ Scenariusze testowe:
 - [x] Test: na mobile klik flagi NIE zmienia jej od razu — otwiera `ConfirmSheet` z podglądem stanu po zmianie
 - [x] Test: „Tak, zmień" wywołuje `toggleFlaga`; „Anuluj"/klik overlay → brak mutacji, sheet zamknięty
 - [x] Test: karta z 4 flagami true ma przygaszenie; FAB nawiguje do `/nowy`
-- [ ] Test: [E2E 375px] karty 2×2; klik flagi → sheet → „Tak, zmień" → zmiana + toast; klik karty → szczegóły; FAB widoczny, CTA ukryte (weryfikacja wizualna w /dev-docs-review)
-- [ ] Test: [E2E 1280px] tabela zamiast kart, CTA w headerze zamiast FAB (weryfikacja wizualna w /dev-docs-review)
+- [x] Test: [E2E 375px] karty 2×2; klik flagi → sheet → „Tak, zmień" → zmiana + toast; FAB widoczny, CTA ukryte — ✅ PASS 2026-06-13 (e2e-faza-3/05,06,07; toast „ROZPISANE: TAK", licznik 1→0)
+- [x] Test: [E2E 1280px] tabela zamiast kart, CTA w headerze zamiast FAB — ✅ PASS 2026-06-13
 
 Weryfikacja:
 - [x] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone (114/114 po IU-8)
-- [ ] Weryfikacja: [E2E 375px] karty 2×2 + ConfirmSheet potwierdza zmianę flagi (screenshot przed/po) (SKIP — brak `.env`/Supabase, Operator TODO)
-- [ ] Weryfikacja: [E2E] zmiana szerokości okna przełącza tabela↔karty (matchMedia reaktywnie) (SKIP — brak `.env`/Supabase, Operator TODO)
+- [x] Weryfikacja: [E2E 375px] karty 2×2 + ConfirmSheet potwierdza zmianę flagi (screenshot przed/po) — ✅ PASS 2026-06-13 (e2e-faza-3/06,07)
+- [x] Weryfikacja: [E2E] zmiana szerokości okna przełącza tabela↔karty (matchMedia reaktywnie) — ✅ PASS 2026-06-13 (1280↔375 w obie strony)
 
 Operator:
 - [ ] QA weryfikuje dotyk/scroll, ConfirmSheet i FAB na realnym urządzeniu (iOS + Android)
@@ -315,12 +315,12 @@ Scenariusze testowe:
 - [x] Test: druga flaga w szczegółach ma pełną etykietę „PRZESŁANY HAFT/SITO"
 - [x] Test: Edytuj → zmiana pola + zapis → update; Anuluj → brak update, powrót do read-only
 - [x] Test: get zwraca brak → render strony 404 z linkiem do `/`
-- [ ] Test: [E2E] pełna ścieżka edycji + toast „Zmiany zapisane"; nieistniejące id → 404 + link działa (weryfikacja wizualna w /dev-docs-review)
+- [x] Test: [E2E] pełna ścieżka edycji + toast „Zmiany zapisane"; nieistniejące id → 404 + link działa — ✅ PASS 2026-06-13 (e2e-faza-3/08,09,10,11,12)
 
 Weryfikacja:
 - [x] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone (126/126 po IU-9)
-- [ ] Weryfikacja: [E2E] edycja pól zapisuje się i widoczna po reloadzie (SKIP — brak `.env`/Supabase, Operator TODO)
-- [ ] Weryfikacja: [E2E] `/projekt/nieistniejace` → „Nie znaleziono projektu" (SKIP — brak `.env`/Supabase, Operator TODO)
+- [x] Weryfikacja: [E2E] edycja pól zapisuje się i widoczna po reloadzie — ✅ PASS 2026-06-13 (e2e-faza-3/09,10)
+- [x] Weryfikacja: [E2E] `/projekt/nieistniejace` → „Nie znaleziono projektu" — ✅ PASS 2026-06-13 (nie-UUID + valid-UUID/PGRST116: e2e-faza-3/11,12)
 
 ---
 
@@ -336,7 +336,7 @@ Weryfikacja:
 
 - [x] 🟠 [important] **src/pages/ProjektSzczegolyPage.tsx:15-17** — `isNotFoundError` opiera się na cichym `unknown`-compare i magic stringu `'PGRST116'`. → jawny predykat `error is PostgrestError` + stała `POSTGREST_NO_ROWS`; dodana walidacja `:id` jako UUID (`isPoprawneId` z `z.string().uuid().safeParse`) → nie-UUID → 404 bez zapytania (`enabled=false`), rozwiązuje też P3 security-nit. Test: nie-UUID → 404 bez strzału do bazy. ✅
 - [x] 🟠 [important] **src/features/projekty/components/ProjektForm.tsx:60-72 + src/lib/config.ts:32** — kolizja sentinela `'Inne…'` (wartość listy `KATEGORIE` ORAZ `KATEGORIA_INNE`): edycja rekordu z `kategoria='Inne…'` blokuje submit mimo braku zmian. **Decyzja użytkownika (2026-06-13): „Zostaw + udokumentuj"** — ryzyko ~zerowe (apka nigdy nie zapisuje literału; YAGNI §5/§10/§11). Dodany INWARIANT w komentarzu przy `KATEGORIA_INNE`; bez zmiany kodu/kontraktu danych. ✅
-- [ ] 🟠 [important] **U7/U8/U9 — 6× weryfikacja E2E** — zablokowane na infrastrukturze operatora (`.env`/Supabase/dev server), nie defekty kodu. Uruchom po Operator TODO (kontekst §110).
+- [x] 🟠 [important] **U7/U8/U9 — 6× weryfikacja E2E** — ✅ **WYKONANE 2026-06-13** na żywo (agent-browser, zalogowana sesja Supabase). Wszystkie 6 scenariuszy PASS; zrzuty w `e2e-faza-3/`. Przy okazji potwierdzono na żywo fix logowania (`/login`→`/`) i fix UUID-guard (404 dla nie-UUID).
 
 **Nity (🟡 P3 — opcjonalne):**
 

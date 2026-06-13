@@ -136,3 +136,29 @@ Zgodnie z precedensem F1/F2 te 6× E2E grupuję jako **jeden zbiorczy 🟠 P2** 
 2. 🟠 **P2 #2** — kolizja sentinela `'Inne…'` (decyzja produktowa — potwierdź przed zmianą; niskie prawdopodobieństwo, ale tani fix usuwa klasę bugów).
 3. 🟠 **P2 (zbiorczy)** — 6× E2E SKIP zablokowane na Operator TODO §110 (`.env`/Supabase) — nie defekty kodu.
 4. 🟡 P3 — kolejność importów `NowyProjektPage`, asercja body PATCH mobile (opcjonalne).
+
+---
+
+## Wyniki E2E na żywo (2026-06-13)
+
+Po skonfigurowaniu Supabase (Operator TODO §110) i poprawkach logowania/UUID przeprowadzono
+6× E2E przez `agent-browser` na zalogowanej sesji (`localhost:5173`, realna baza). Zrzuty: `e2e-faza-3/`.
+
+| # | Scenariusz | Wynik | Dowód |
+|---|-----------|-------|-------|
+| U7-b | pusty submit → błędy PL (zostaje na `/nowy`); „Inne…" → input własnej kategorii | ✅ PASS | 01, 02 |
+| U7-a | dodanie projektu → redirect `/` + toast „Projekt dodany" + nowy wiersz; liczniki 0→1 | ✅ PASS | 03, 04 |
+| U8-b | 1280↔375 przełącza tabela↔karty (matchMedia), CTA↔FAB | ✅ PASS | 04, 05 |
+| U8-a | [375px] karty 2×2; klik flagi → ConfirmSheet (bez mutacji) → „Tak, zmień" → toast „ROZPISANE: TAK" + licznik 1→0 | ✅ PASS | 05, 06, 07 |
+| U9-a | szczegóły (data pełna, „PRZESŁANY HAFT/SITO") → Edytuj → zmiana nazwy → „Zmiany zapisane" → reload utrzymuje zmianę | ✅ PASS | 08, 09, 10 |
+| U9-b | `/projekt/nieistniejace` (nie-UUID) i valid-UUID/PGRST116 → „Nie znaleziono projektu"; link „Wróć do listy" → `/` | ✅ PASS | 11, 12 |
+
+**Dodatkowo potwierdzone na żywo:**
+- **Fix logowania** (`/login`→`/` po zalogowaniu) — wejście na listę po submit. ✅
+- **Fix UUID-guard (P2 #1)** — nie-UUID `:id` → natychmiastowe 404 bez zapytania. ✅
+- **Custom kategoria „Inne…" round-trip** — zapis „Naszywka 3D" i poprawne odtworzenie w trybie edit
+  (`Inne…` + input wypełniony). To realne pokrycie ścieżki, której dotyczył P2 #2 (zostawiony jako
+  udokumentowany invariant — w praktyce działa poprawnie).
+- Empty state „Brak projektów" + CTA, filtry z licznikami `tabular-nums`, kolumna „PRZESŁANY HAFT/SITO".
+
+**Severity gate E2E:** 6/6 PASS — brak nowych findingów. Pozostałe E2E (Faza 1/2/4) poza zakresem tego runu.
