@@ -40,8 +40,10 @@ describe('Filtry', () => {
         projekty={[]}
         flagaAktywna={undefined}
         szukaj=""
+        archiwum={false}
         onFlagaChange={vi.fn()}
         onSzukajChange={vi.fn()}
+        onArchiwumChange={vi.fn()}
       />,
     );
 
@@ -64,8 +66,10 @@ describe('Filtry', () => {
         projekty={projekty}
         flagaAktywna={undefined}
         szukaj=""
+        archiwum={false}
         onFlagaChange={vi.fn()}
         onSzukajChange={vi.fn()}
+        onArchiwumChange={vi.fn()}
       />,
     );
 
@@ -81,8 +85,10 @@ describe('Filtry', () => {
         projekty={projekty}
         flagaAktywna={undefined}
         szukaj=""
+        archiwum={false}
         onFlagaChange={vi.fn()}
         onSzukajChange={vi.fn()}
+        onArchiwumChange={vi.fn()}
       />,
     );
 
@@ -95,8 +101,10 @@ describe('Filtry', () => {
         projekty={[projektFixture({ rozpisane: false }), projektFixture({ rozpisane: false })]}
         flagaAktywna={undefined}
         szukaj=""
+        archiwum={false}
         onFlagaChange={vi.fn()}
         onSzukajChange={vi.fn()}
+        onArchiwumChange={vi.fn()}
       />,
     );
 
@@ -108,8 +116,10 @@ describe('Filtry', () => {
         projekty={[projektFixture({ rozpisane: true }), projektFixture({ rozpisane: false })]}
         flagaAktywna={undefined}
         szukaj=""
+        archiwum={false}
         onFlagaChange={vi.fn()}
         onSzukajChange={vi.fn()}
+        onArchiwumChange={vi.fn()}
       />,
     );
 
@@ -125,8 +135,10 @@ describe('Filtry', () => {
         projekty={[]}
         flagaAktywna={undefined}
         szukaj=""
+        archiwum={false}
         onFlagaChange={onFlagaChange}
         onSzukajChange={vi.fn()}
+        onArchiwumChange={vi.fn()}
       />,
     );
 
@@ -144,8 +156,10 @@ describe('Filtry', () => {
         projekty={[]}
         flagaAktywna="rozpisane"
         szukaj=""
+        archiwum={false}
         onFlagaChange={onFlagaChange}
         onSzukajChange={vi.fn()}
+        onArchiwumChange={vi.fn()}
       />,
     );
 
@@ -160,8 +174,10 @@ describe('Filtry', () => {
         projekty={[]}
         flagaAktywna="rozpisane"
         szukaj=""
+        archiwum={false}
         onFlagaChange={vi.fn()}
         onSzukajChange={vi.fn()}
+        onArchiwumChange={vi.fn()}
       />,
     );
 
@@ -178,13 +194,60 @@ describe('Filtry', () => {
         projekty={[]}
         flagaAktywna={undefined}
         szukaj=""
+        archiwum={false}
         onFlagaChange={vi.fn()}
         onSzukajChange={onSzukajChange}
+        onArchiwumChange={vi.fn()}
       />,
     );
 
     await user.type(screen.getByRole('searchbox', { name: /szukaj/i }), 'a');
 
     expect(onSzukajChange).toHaveBeenCalledWith('a');
+  });
+
+  it('w widoku aktywnym przycisk archiwum włącza archiwum (onArchiwumChange(true))', async () => {
+    const user = userEvent.setup();
+    const onArchiwumChange = vi.fn();
+
+    render(
+      <Filtry
+        projekty={[]}
+        flagaAktywna={undefined}
+        szukaj=""
+        archiwum={false}
+        onFlagaChange={vi.fn()}
+        onSzukajChange={vi.fn()}
+        onArchiwumChange={onArchiwumChange}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /archiwum/i }));
+
+    expect(onArchiwumChange).toHaveBeenCalledWith(true);
+  });
+
+  it('w widoku archiwum ukrywa filtry flag i pozwala wrócić do aktywnych', async () => {
+    const user = userEvent.setup();
+    const onArchiwumChange = vi.fn();
+
+    render(
+      <Filtry
+        projekty={[]}
+        flagaAktywna={undefined}
+        szukaj=""
+        archiwum={true}
+        onFlagaChange={vi.fn()}
+        onSzukajChange={vi.fn()}
+        onArchiwumChange={onArchiwumChange}
+      />,
+    );
+
+    // Filtry flag nie są renderowane w archiwum.
+    expect(screen.queryByRole('button', { name: /do rozpisania/i })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /pokaż aktywne/i }));
+
+    expect(onArchiwumChange).toHaveBeenCalledWith(false);
   });
 });

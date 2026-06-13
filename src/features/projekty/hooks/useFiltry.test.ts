@@ -51,6 +51,23 @@ describe('useFiltry', () => {
     expect(result.current.filtry.szukaj).toBe('kosz');
   });
 
+  it('setArchiwum(true) przełącza wymiar archiwum i czyści aktywną flagę', () => {
+    const { result } = renderHook(() => useFiltry());
+
+    act(() => {
+      result.current.setFlaga('rozpisane');
+    });
+    expect(result.current.filtry.flaga).toBe('rozpisane');
+
+    act(() => {
+      result.current.setArchiwum(true);
+    });
+
+    expect(result.current.filtry.archiwum).toBe(true);
+    // Wejście do archiwum czyści filtr flagi (inny kontekst akcji).
+    expect(result.current.filtry.flaga).toBeUndefined();
+  });
+
   it('reset czyści szukaj i wraca do flaga undefined', () => {
     const { result } = renderHook(() => useFiltry());
 

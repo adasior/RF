@@ -1,3 +1,4 @@
+import { RotateCcw, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -8,10 +9,18 @@ import type { Projekt } from '@/lib/types';
 import { useProjektMutations } from '@/hooks/useProjektMutations';
 
 import { FlagBtn } from './FlagBtn';
+import { HardDeleteDialog } from './HardDeleteDialog';
+import { UsunDialog } from './UsunDialog';
+import { useProjektAkcje } from '../hooks/useProjektAkcje';
 
 interface ProjektTabelaProps {
   projekty: Projekt[];
+  /** Kontekst widoku: false = aktywne („Usuń"), true = archiwum („Przywróć" + „Usuń trwale"). */
+  archiwum: boolean;
 }
+
+const AKCJA_BTN =
+  'inline-flex items-center gap-1 rounded-[7px] border border-border bg-transparent px-2 py-1 text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus disabled:opacity-60';
 
 const TH_BASE = 'px-2.5 py-2.5 text-[10px] font-medium uppercase tracking-[0.07em] text-text-meta text-left whitespace-nowrap';
 
@@ -25,9 +34,12 @@ function isKompletny(projekt: Projekt): boolean {
  * Klik wiersza → szczegóły; klik flagi (stopPropagation) → optimistic toggle + toast.
  * Wiersz z 4× true → `opacity-40`.
  */
-export function ProjektTabela({ projekty }: ProjektTabelaProps) {
+export function ProjektTabela({ projekty, archiwum }: ProjektTabelaProps) {
   const navigate = useNavigate();
   const { toggleFlaga } = useProjektMutations();
+  const akcje = useProjektAkcje();
+
+  const stopProp = (event: React.MouseEvent): void => event.stopPropagation();
 
   const makeToggleHandler = (
     projekt: Projekt,
@@ -48,6 +60,7 @@ export function ProjektTabela({ projekty }: ProjektTabelaProps) {
   };
 
   return (
+    <>
     <table className="w-full border-collapse" style={{ tableLayout: 'auto' }}>
       <thead>
         <tr className="border-b border-border bg-surface-alt">
@@ -61,7 +74,10 @@ export function ProjektTabela({ projekty }: ProjektTabelaProps) {
               {flaga.columnLabel ?? flaga.label}
             </th>
           ))}
-          <th className={`${TH_BASE} pr-5 text-right`}>Dodano</th>
+          <th className={`${TH_BASE} text-right`}>Dodano</th>
+          <th className={`${TH_BASE} pr-5 text-right`}>
+            <span className="sr-only">Akcje</span>
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -97,13 +113,63 @@ export function ProjektTabela({ projekty }: ProjektTabelaProps) {
                 />
               </td>
             ))}
-            <td className="px-2.5 py-2 pr-5 text-right align-middle text-[11px] text-text-meta whitespace-nowrap">
+            <td className="px-2.5 py-2 text-right align-middle text-[11px] text-text-meta whitespace-nowrap">
               {formatRelativeData(projekt.created_at)}
+            </td>
+            <td className="px-2.5 py-2 pr-5 text-right align-middle whitespace-nowrap" onClick={stopProp}>
+              {archiwum ? (
+                <div className="inline-flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => akcje.przywroc(projekt)}
+                    disabled={akcje.isPrzywracanie}
+                    className={`${AKCJA_BTN} text-text-secondary`}
+                  >
+                    <RotateCcw size={12} aria-hidden="true" />
+                    Przywróć
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => akcje.otworzHard(projekt)}
+                    className={`${AKCJA_BTN} text-danger`}
+                  >
+                    <Trash2 size={12} aria-hidden="true" />
+                    Usuń trwale
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => akcje.otworzUsun(projekt)}
+                  aria-label={`Usuń projekt ${projekt.nazwa}`}
+                  className={`${AKCJA_BTN} text-danger`}
+                >
+                  <Trash2 size={12} aria-hidden="true" />
+                  Usuń
+                </button>
+              )}
             </td>
           </tr>
         ))}
       </tbody>
     </table>
+      {akcje.dialog.rodzaj === 'usun' && (
+        <UsunDialog
+          nazwa={akcje.dialog.projekt.nazwa}
+          isPending={akcje.isPending}
+          onConfirm={akcje.potwierdzUsun}
+          onCancel={akcje.zamknij}
+        />
+      )}
+      {akcje.dialog.rodzaj === 'hard' && (
+        <HardDeleteDialog
+          nazwa={akcje.dialog.projekt.nazwa}
+          isPending={akcje.isPending}
+          onConfirm={akcje.potwierdzHard}
+          onCancel={akcje.zamknij}
+        />
+      )}
+    </>
   );
 }
 

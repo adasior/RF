@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react';
+import { Archive, Search } from 'lucide-react';
 import { useMemo } from 'react';
 
 import { FLAGI } from '@/lib/config';
@@ -9,8 +9,11 @@ interface FiltryProps {
   projekty: Projekt[];
   flagaAktywna: FlagaKey | undefined;
   szukaj: string;
+  /** Wymiar archiwum: false = aktywne, true = tylko zarchiwizowane (D6). */
+  archiwum: boolean;
   onFlagaChange: (flaga: FlagaKey | undefined) => void;
   onSzukajChange: (szukaj: string) => void;
+  onArchiwumChange: (archiwum: boolean) => void;
 }
 
 interface FiltrPozycja {
@@ -38,8 +41,10 @@ export function Filtry({
   projekty,
   flagaAktywna,
   szukaj,
+  archiwum,
   onFlagaChange,
   onSzukajChange,
+  onArchiwumChange,
 }: FiltryProps) {
   const pozycje = useMemo<FiltrPozycja[]>(() => {
     const flagowe = FLAGI.map((flaga) => ({
@@ -55,25 +60,39 @@ export function Filtry({
   return (
     <div className="flex items-center gap-3 border-b border-border bg-bg px-5">
       <div className="flex h-10 flex-1 items-center gap-[18px] overflow-x-auto">
-        {pozycje.map((pozycja) => {
-          const isAktywny = pozycja.key === flagaAktywna;
+        {!archiwum &&
+          pozycje.map((pozycja) => {
+            const isAktywny = pozycja.key === flagaAktywna;
 
-          return (
-            <button
-              key={pozycja.key ?? 'wszystkie'}
-              type="button"
-              onClick={() => onFlagaChange(pozycja.key)}
-              aria-pressed={isAktywny}
-              className={`${LINK_BASE} ${isAktywny ? LINK_AKTYWNY : LINK_NIEAKTYWNY}`}
-            >
-              {pozycja.label}
-              <span className={`${PILL_BASE} ${isAktywny ? PILL_AKTYWNY : PILL_NIEAKTYWNY}`}>
-                {pozycja.licznik}
-              </span>
-            </button>
-          );
-        })}
+            return (
+              <button
+                key={pozycja.key ?? 'wszystkie'}
+                type="button"
+                onClick={() => onFlagaChange(pozycja.key)}
+                aria-pressed={isAktywny}
+                className={`${LINK_BASE} ${isAktywny ? LINK_AKTYWNY : LINK_NIEAKTYWNY}`}
+              >
+                {pozycja.label}
+                <span className={`${PILL_BASE} ${isAktywny ? PILL_AKTYWNY : PILL_NIEAKTYWNY}`}>
+                  {pozycja.licznik}
+                </span>
+              </button>
+            );
+          })}
+        {archiwum && (
+          <span className="text-xs font-medium text-text-primary">Archiwum</span>
+        )}
       </div>
+
+      <button
+        type="button"
+        onClick={() => onArchiwumChange(!archiwum)}
+        aria-pressed={archiwum}
+        className={`${LINK_BASE} shrink-0 ${archiwum ? LINK_AKTYWNY : LINK_NIEAKTYWNY}`}
+      >
+        <Archive size={13} aria-hidden="true" />
+        {archiwum ? 'Pokaż aktywne' : 'Archiwum'}
+      </button>
 
       <search className="shrink-0">
         <label htmlFor="filtry-szukaj" className="sr-only">

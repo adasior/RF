@@ -13,6 +13,7 @@ import { useIsMobile } from '../hooks/useIsMobile';
 
 import { ConfirmSheet } from './ConfirmSheet';
 import { FlagBtn } from './FlagBtn';
+import { UsunDialog } from './UsunDialog';
 
 interface SzczegolyWidokProps {
   projekt: Projekt;
@@ -48,6 +49,12 @@ export function SzczegolyWidok({ projekt, onEdytuj, onUsun, isUsuwanie }: Szczeg
   const isMobile = useIsMobile();
   const { toggleFlaga } = useProjektMutations();
   const [zmiana, setZmiana] = useState<OczekujacaZmiana | null>(null);
+  const [isUsunDialog, setIsUsunDialog] = useState(false);
+
+  const handleUsunConfirm = (): void => {
+    setIsUsunDialog(false);
+    onUsun();
+  };
 
   const mutujFlage = (flaga: Flaga, nowaWartosc: boolean): void => {
     toggleFlaga.mutate(
@@ -100,7 +107,7 @@ export function SzczegolyWidok({ projekt, onEdytuj, onUsun, isUsuwanie }: Szczeg
           </button>
           <button
             type="button"
-            onClick={onUsun}
+            onClick={() => setIsUsunDialog(true)}
             disabled={isUsuwanie}
             aria-label="Usuń projekt"
             className={`${PRZYCISK_HEADER} px-3 py-[7px] text-danger disabled:opacity-60`}
@@ -170,6 +177,15 @@ export function SzczegolyWidok({ projekt, onEdytuj, onUsun, isUsuwanie }: Szczeg
           nowaWartosc={zmiana.nowaWartosc}
           onConfirm={handleConfirm}
           onCancel={() => setZmiana(null)}
+        />
+      )}
+
+      {isUsunDialog && (
+        <UsunDialog
+          nazwa={projekt.nazwa}
+          isPending={isUsuwanie}
+          onConfirm={handleUsunConfirm}
+          onCancel={() => setIsUsunDialog(false)}
         />
       )}
     </div>

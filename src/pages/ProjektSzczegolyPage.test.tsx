@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -191,7 +191,7 @@ describe('ProjektSzczegolyPage', () => {
     expect(tracker.wyslany).toBe(false);
   });
 
-  it('Usuń (placeholder U10) → archiwizacja + toast „Projekt usunięty" + powrót na listę', async () => {
+  it('Usuń → UsunDialog → potwierdzenie → archiwizacja + toast „Projekt przeniesiony do archiwum" + powrót na listę', async () => {
     const user = userEvent.setup();
     mockGetProjekt(projektFixture());
 
@@ -206,8 +206,13 @@ describe('ProjektSzczegolyPage', () => {
     renderPage();
     await user.click(await screen.findByRole('button', { name: 'Usuń projekt' }));
 
+    // Klik kosza otwiera dialog — archiwizacja dopiero po potwierdzeniu.
+    const dialog = screen.getByRole('dialog');
+    expect(holder.body).toBeNull();
+    await user.click(within(dialog).getByRole('button', { name: 'Usuń' }));
+
     expect(await screen.findByText('Lista projektów')).toBeInTheDocument();
-    expect(toastSuccess).toHaveBeenCalledWith('Projekt usunięty');
+    expect(toastSuccess).toHaveBeenCalledWith('Projekt przeniesiony do archiwum');
     expect(holder.body).toHaveProperty('archived_at');
     expect(holder.body?.archived_at).toEqual(expect.any(String));
   });

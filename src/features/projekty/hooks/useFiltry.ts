@@ -13,16 +13,20 @@ export interface UseFiltryResult {
   szukajInput: string;
   setFlaga: (flaga: FlagaKey | undefined) => void;
   setSzukaj: (szukaj: string) => void;
+  /** Przełącz wymiar archiwum (aktywne ↔ tylko zarchiwizowane); czyści filtr flagi. */
+  setArchiwum: (archiwum: boolean) => void;
   /** „Pokaż wszystkie" — flaga undefined + czyści szukaj. */
   reset: () => void;
 }
 
 /**
- * Stan belki filtrów (U6): aktywna flaga + debounce’owane pole „Szukaj".
- * „Wszystkie" = `flaga: undefined`. `archiwum` zawsze false (widok listy aktywnych).
+ * Stan belki filtrów (U6 + U10): wymiar archiwum + aktywna flaga + debounce’owane „Szukaj".
+ * „Wszystkie" = `flaga: undefined`. `archiwum: false` = aktywne, `true` = tylko zarchiwizowane.
+ * Przełączenie wymiaru archiwum czyści filtr flagi (inny kontekst akcji).
  */
 export function useFiltry(): UseFiltryResult {
   const [flaga, setFlaga] = useState<FlagaKey | undefined>(undefined);
+  const [archiwum, setArchiwumState] = useState<boolean>(false);
   const [szukajInput, setSzukajInput] = useState<string>('');
   const [szukajDebounced, setSzukajDebounced] = useState<string>('');
 
@@ -34,6 +38,11 @@ export function useFiltry(): UseFiltryResult {
     return () => clearTimeout(timer);
   }, [szukajInput]);
 
+  const setArchiwum = (nowyArchiwum: boolean): void => {
+    setArchiwumState(nowyArchiwum);
+    setFlaga(undefined);
+  };
+
   const reset = (): void => {
     setFlaga(undefined);
     setSzukajInput('');
@@ -41,8 +50,8 @@ export function useFiltry(): UseFiltryResult {
   };
 
   const filtry = useMemo<ProjektyFiltry>(
-    () => ({ flaga, szukaj: szukajDebounced, archiwum: false }),
-    [flaga, szukajDebounced],
+    () => ({ flaga, szukaj: szukajDebounced, archiwum }),
+    [flaga, szukajDebounced, archiwum],
   );
 
   return {
@@ -50,6 +59,7 @@ export function useFiltry(): UseFiltryResult {
     szukajInput,
     setFlaga,
     setSzukaj: setSzukajInput,
+    setArchiwum,
     reset,
   };
 }

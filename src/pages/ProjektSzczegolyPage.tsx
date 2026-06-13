@@ -39,7 +39,7 @@ function isPoprawneId(id: string | undefined): boolean {
  * - read-only: `SzczegolyWidok` (flagi, grid danych);
  * - tryb edycji: `ProjektForm` mode='edit' (pola wypełnione, BEZ flag — flagi zostają);
  * - brak rekordu (PGRST116) → `NotFoundPage` z linkiem do `/`;
- * - Usuń: archiwizacja (placeholder — pełny dialog potwierdzenia w U10).
+ * - Usuń: `SzczegolyWidok` otwiera `UsunDialog` → potwierdzenie → archiwizacja (soft delete, D6).
  */
 export function ProjektSzczegolyPage() {
   const { id } = useParams<{ id: string }>();
@@ -106,10 +106,11 @@ export function ProjektSzczegolyPage() {
   };
 
   const handleUsun = (): void => {
-    // Placeholder U10: archiwizacja bez dialogu potwierdzenia (soft delete, D6).
+    // Wywoływane po potwierdzeniu w UsunDialog (SzczegolyWidok) — archiwizacja (soft delete, D6).
+    // Copy spójne z listą (useProjektAkcje): soft delete = archiwizacja, nie trwałe usunięcie.
     archive.mutate(projekt.id, {
       onSuccess: () => {
-        toast.success('Projekt usunięty');
+        toast.success('Projekt przeniesiony do archiwum');
         void navigate('/');
       },
     });

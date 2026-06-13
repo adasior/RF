@@ -1,3 +1,4 @@
+import { RotateCcw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -10,10 +11,18 @@ import { useProjektMutations } from '@/hooks/useProjektMutations';
 
 import { ConfirmSheet } from './ConfirmSheet';
 import { FlagBtn } from './FlagBtn';
+import { HardDeleteDialog } from './HardDeleteDialog';
+import { UsunDialog } from './UsunDialog';
+import { useProjektAkcje } from '../hooks/useProjektAkcje';
 
 interface ProjektKartyProps {
   projekty: Projekt[];
+  /** Kontekst widoku: false = aktywne („Usuń"), true = archiwum („Przywróć" + „Usuń trwale"). */
+  archiwum: boolean;
 }
+
+const AKCJA_BTN =
+  'inline-flex items-center justify-center gap-1 rounded-[7px] border border-border bg-transparent px-2 py-1.5 text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus disabled:opacity-60';
 
 /** Zmiana flagi czekająca na potwierdzenie w ConfirmSheet (D5: mobile bez natychmiastowego toggle). */
 interface OczekujacaZmiana {
@@ -33,10 +42,13 @@ function isKompletny(projekt: Projekt): boolean {
  * Klik flagi NIE mutuje — otwiera `ConfirmSheet`; „Tak, zmień" → ta sama ścieżka
  * `toggleFlaga` (optimistic + rollback) co desktop + toast „LABEL: TAK/NIE".
  */
-export function ProjektKarty({ projekty }: ProjektKartyProps) {
+export function ProjektKarty({ projekty, archiwum }: ProjektKartyProps) {
   const navigate = useNavigate();
   const { toggleFlaga } = useProjektMutations();
+  const akcje = useProjektAkcje();
   const [zmiana, setZmiana] = useState<OczekujacaZmiana | null>(null);
+
+  const stopProp = (event: React.MouseEvent): void => event.stopPropagation();
 
   const handleConfirm = (): void => {
     if (!zmiana) {
@@ -89,6 +101,40 @@ export function ProjektKarty({ projekty }: ProjektKartyProps) {
                 />
               ))}
             </div>
+
+            {archiwum ? (
+              <div className="mt-2 grid grid-cols-2 gap-1" onClick={stopProp}>
+                <button
+                  type="button"
+                  onClick={() => akcje.przywroc(projekt)}
+                  disabled={akcje.isPrzywracanie}
+                  className={`${AKCJA_BTN} text-text-secondary`}
+                >
+                  <RotateCcw size={12} aria-hidden="true" />
+                  Przywróć
+                </button>
+                <button
+                  type="button"
+                  onClick={() => akcje.otworzHard(projekt)}
+                  className={`${AKCJA_BTN} text-danger`}
+                >
+                  <Trash2 size={12} aria-hidden="true" />
+                  Usuń trwale
+                </button>
+              </div>
+            ) : (
+              <div className="mt-2" onClick={stopProp}>
+                <button
+                  type="button"
+                  onClick={() => akcje.otworzUsun(projekt)}
+                  aria-label={`Usuń projekt ${projekt.nazwa}`}
+                  className={`${AKCJA_BTN} w-full text-danger`}
+                >
+                  <Trash2 size={12} aria-hidden="true" />
+                  Usuń
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -100,6 +146,23 @@ export function ProjektKarty({ projekty }: ProjektKartyProps) {
           nowaWartosc={zmiana.nowaWartosc}
           onConfirm={handleConfirm}
           onCancel={() => setZmiana(null)}
+        />
+      )}
+
+      {akcje.dialog.rodzaj === 'usun' && (
+        <UsunDialog
+          nazwa={akcje.dialog.projekt.nazwa}
+          isPending={akcje.isPending}
+          onConfirm={akcje.potwierdzUsun}
+          onCancel={akcje.zamknij}
+        />
+      )}
+      {akcje.dialog.rodzaj === 'hard' && (
+        <HardDeleteDialog
+          nazwa={akcje.dialog.projekt.nazwa}
+          isPending={akcje.isPending}
+          onConfirm={akcje.potwierdzHard}
+          onCancel={akcje.zamknij}
         />
       )}
     </>

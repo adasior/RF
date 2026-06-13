@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { delay, http, HttpResponse } from 'msw';
 import type { ReactNode } from 'react';
@@ -13,9 +13,11 @@ import { ProjektTabela } from './ProjektTabela';
 
 // Mockujemy TYLKO sonner (zewnętrzny UI) — asercja na treść toastu.
 const toastFn = vi.fn();
+const toastSuccess = vi.fn();
 const toastError = vi.fn();
 vi.mock('sonner', () => ({
   toast: Object.assign((msg: string) => toastFn(msg), {
+    success: (msg: string) => toastSuccess(msg),
     error: (msg: string) => toastError(msg),
   }),
 }));
@@ -44,7 +46,7 @@ function LocationProbe() {
   return <div data-testid="location">{location.pathname}</div>;
 }
 
-function renderTabela(projekty: Projekt[]) {
+function renderTabela(projekty: Projekt[], archiwum = false) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -60,7 +62,7 @@ function renderTabela(projekty: Projekt[]) {
     );
   }
 
-  return render(<ProjektTabela projekty={projekty} />, { wrapper: Wrapper });
+  return render(<ProjektTabela projekty={projekty} archiwum={archiwum} />, { wrapper: Wrapper });
 }
 
 beforeEach(() => {
@@ -178,5 +180,66 @@ describe('ProjektTabela', () => {
     });
     // Klik nazwy nie wywołuje toggle flagi.
     expect(toastFn).not.toHaveBeenCalled();
+  });
+
+  it('kontekst aktywny: renderuje „Usuń" (archive), NIE „Przywróć"/„Usuń trwale"', () => {
+    renderTabela([projektFixture()], false);
+
+    expect(screen.getByRole('button', { name: /^Usuń projekt/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Usuń trwale' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Przywróć' })).not.toBeInTheDocument();
+  });
+
+  it('kontekst archiwum: renderuje „Przywróć" + „Usuń trwale", NIE „Usuń"', () => {
+    renderTabela([projektFixture({ archived_at: '2026-06-12T10:00:00Z' })], true);
+
+    expect(screen.getByRole('button', { name: 'Przywróć' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Usuń trwale' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Usuń projekt/i })).not.toBeInTheDocument();
+  });
+
+  it('kontekst aktywny: „Usuń" otwiera UsunDialog z archiwizacją; potwierdzenie → PATCH archived_at', async () => {
+    const user = userEvent.setup();
+    let patchBody: Record<string, unknown> | null = null;
+    server.use(
+      http.patch(PROJEKTY_REST_URL, async ({ request }) => {
+        patchBody = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json([], { status: 204 });
+      }),
+    );
+
+    renderTabela([projektFixture()], false);
+
+    await user.click(screen.getByRole('button', { name: /^Usuń projekt/i }));
+
+    const dialog = screen.getByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Usuń' }));
+
+    await waitFor(() => expect(patchBody).not.toBeNull());
+    expect(patchBody).toHaveProperty('archived_at');
+  });
+
+  it('kontekst archiwum: hard delete dopiero po 3 krokach wysyła DELETE', async () => {
+    const user = userEvent.setup();
+    let deleteWyslany = false;
+    server.use(
+      http.delete(PROJEKTY_REST_URL, () => {
+        deleteWyslany = true;
+        return HttpResponse.json([], { status: 204 });
+      }),
+    );
+
+    renderTabela([projektFixture({ archived_at: '2026-06-12T10:00:00Z' })], true);
+
+    await user.click(screen.getByRole('button', { name: 'Usuń trwale' }));
+
+    const dialog = screen.getByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Usuń trwale' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Na pewno?' }));
+    expect(deleteWyslany).toBe(false);
+
+    await user.click(within(dialog).getByRole('button', { name: 'Tak, usuń bezpowrotnie' }));
+
+    await waitFor(() => expect(deleteWyslany).toBe(true));
   });
 });

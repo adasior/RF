@@ -13,9 +13,11 @@ import { ProjektKarty } from './ProjektKarty';
 
 // Mockujemy TYLKO sonner (zewnętrzny UI) — asercja na treść toastu.
 const toastFn = vi.fn();
+const toastSuccess = vi.fn();
 const toastError = vi.fn();
 vi.mock('sonner', () => ({
   toast: Object.assign((msg: string) => toastFn(msg), {
+    success: (msg: string) => toastSuccess(msg),
     error: (msg: string) => toastError(msg),
   }),
 }));
@@ -44,7 +46,7 @@ function LocationProbe() {
   return <div data-testid="location">{location.pathname}</div>;
 }
 
-function renderKarty(projekty: Projekt[]) {
+function renderKarty(projekty: Projekt[], archiwum = false) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -60,7 +62,7 @@ function renderKarty(projekty: Projekt[]) {
     );
   }
 
-  return render(<ProjektKarty projekty={projekty} />, { wrapper: Wrapper });
+  return render(<ProjektKarty projekty={projekty} archiwum={archiwum} />, { wrapper: Wrapper });
 }
 
 /** Rejestruje handler PATCH i zwraca obiekt śledzący fakt mutacji oraz wysłane body. */
@@ -200,5 +202,33 @@ describe('ProjektKarty', () => {
       );
     });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('kontekst aktywny: renderuje „Usuń", NIE „Przywróć"/„Usuń trwale"', () => {
+    renderKarty([projektFixture()], false);
+
+    expect(screen.getByRole('button', { name: /^Usuń projekt/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Przywróć' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Usuń trwale' })).not.toBeInTheDocument();
+  });
+
+  it('kontekst archiwum: renderuje „Przywróć" + „Usuń trwale"', () => {
+    renderKarty([projektFixture({ archived_at: '2026-06-12T10:00:00Z' })], true);
+
+    expect(screen.getByRole('button', { name: 'Przywróć' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Usuń trwale' })).toBeInTheDocument();
+  });
+
+  it('kontekst archiwum: „Przywróć" wysyła PATCH archived_at=null + toast', async () => {
+    const user = userEvent.setup();
+    const patch = trackPatch();
+
+    renderKarty([projektFixture({ archived_at: '2026-06-12T10:00:00Z' })], true);
+
+    await user.click(screen.getByRole('button', { name: 'Przywróć' }));
+
+    await waitFor(() => expect(patch.wyslany).toBe(true));
+    expect(patch.body).toMatchObject({ archived_at: null });
+    expect(toastSuccess).toHaveBeenCalledWith('Projekt przywrócony');
   });
 });

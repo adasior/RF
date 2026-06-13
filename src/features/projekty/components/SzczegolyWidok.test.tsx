@@ -197,17 +197,43 @@ describe('SzczegolyWidok', () => {
     expect(toastFn).not.toHaveBeenCalled();
   });
 
-  it('Edytuj i Usuń wywołują callbacki strony', async () => {
+  it('Edytuj wywołuje callback strony', async () => {
     const user = userEvent.setup();
     const onEdytuj = vi.fn();
-    const onUsun = vi.fn();
 
-    renderWidok(projektFixture(), { onEdytuj, onUsun });
+    renderWidok(projektFixture(), { onEdytuj });
 
     await user.click(screen.getByRole('button', { name: 'Edytuj' }));
     expect(onEdytuj).toHaveBeenCalledTimes(1);
+  });
+
+  it('Usuń otwiera UsunDialog; potwierdzenie → onUsun (archiwizacja)', async () => {
+    const user = userEvent.setup();
+    const onUsun = vi.fn();
+
+    renderWidok(projektFixture(), { onUsun });
+
+    // Klik kosza otwiera dialog — onUsun NIE odpala się od razu.
+    await user.click(screen.getByRole('button', { name: 'Usuń projekt' }));
+    expect(onUsun).not.toHaveBeenCalled();
+
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByText(/Tshirty Piast Anty KSG/)).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole('button', { name: 'Usuń' }));
+    expect(onUsun).toHaveBeenCalledTimes(1);
+  });
+
+  it('Usuń → Anuluj zamyka dialog bez onUsun', async () => {
+    const user = userEvent.setup();
+    const onUsun = vi.fn();
+
+    renderWidok(projektFixture(), { onUsun });
 
     await user.click(screen.getByRole('button', { name: 'Usuń projekt' }));
-    expect(onUsun).toHaveBeenCalledTimes(1);
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Anuluj' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(onUsun).not.toHaveBeenCalled();
   });
 });
