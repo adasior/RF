@@ -1,7 +1,7 @@
 # Zadania: System zarządzania projektami odzieżowymi — MVP
 
 **Branch:** `feature/zarzadzanie-zamowieniami` (nazwa zachowana dla ciągłości git)
-**Ostatnia aktualizacja:** 2026-06-12 (Faza 3 ukończona — U7/U8/U9)
+**Ostatnia aktualizacja:** 2026-06-13 (Faza 4 ukończona — U10/U11/U12; MVP feature-complete)
 
 Legenda: `Test:` = scenariusz testowy, `Weryfikacja:` = kryterium weryfikacji,
 `Operator:` = krok poza kodem (człowiek).
@@ -354,23 +354,24 @@ Weryfikacja:
 **Delegate to:** feature-builder-ui · **Nakład:** M · **Zależności:** U4, U6, U9
 
 Implementacja:
-- [ ] `src/features/projekty/components/UsunDialog.tsx` (potwierdzenie archiwizacji: „Usunąć projekt [nazwa]?")
-- [ ] `src/features/projekty/components/HardDeleteDialog.tsx` (danger, „Operacja nieodwracalna", 3-stopniowe potwierdzenie)
-- [ ] Modyfikuj `Filtry.tsx`/`useFiltry.ts` (wymiar archiwum: aktywne ↔ tylko zarchiwizowane)
-- [ ] Modyfikuj `ProjektTabela.tsx`/`ProjektKarty.tsx` (akcje wg kontekstu: aktywne → „Usuń"; archiwum → „Przywróć" + „Usuń trwale")
-- [ ] Modyfikuj `SzczegolyWidok.tsx` (przycisk Usuń → `UsunDialog`)
-- [ ] Test (unit, test-first niedostępność hard delete z aktywnej): `UsunDialog.test.tsx`, `HardDeleteDialog.test.tsx`
+- [x] `src/features/projekty/components/UsunDialog.tsx` (potwierdzenie archiwizacji: „Usunąć projekt [nazwa]?")
+- [x] `src/features/projekty/components/HardDeleteDialog.tsx` (danger, „Operacja nieodwracalna", 3-stopniowe potwierdzenie)
+- [x] Modyfikuj `Filtry.tsx`/`useFiltry.ts` (wymiar archiwum: aktywne ↔ tylko zarchiwizowane)
+- [x] Modyfikuj `ProjektTabela.tsx`/`ProjektKarty.tsx` (akcje wg kontekstu: aktywne → „Usuń"; archiwum → „Przywróć" + „Usuń trwale")
+- [x] Modyfikuj `SzczegolyWidok.tsx` (przycisk Usuń → `UsunDialog`)
+- [x] Test (unit, test-first niedostępność hard delete z aktywnej): `UsunDialog.test.tsx`, `HardDeleteDialog.test.tsx`
+- ⚠ Dodano `src/features/projekty/hooks/useProjektAkcje.ts` (shared logic archive/restore/hardDelete + stan dialogu jako discriminated union; dedup między Tabela/Karty — coding-rules §3, 2+ użycia).
 
 Scenariusze testowe:
-- [ ] Test: kontekst aktywny renderuje „Usuń" (archive), NIE renderuje „Usuń trwale"
-- [ ] Test: kontekst archiwum renderuje „Przywróć" + „Usuń trwale"
-- [ ] Test: `UsunDialog` potwierdzenie → archive; anulowanie → brak akcji
-- [ ] Test: `HardDeleteDialog` przejście 3 kroków → hardDelete; anulowanie na dowolnym kroku → brak akcji
-- [ ] Test: [E2E] archiwizacja → archiwum → przywróć; 3-stopniowy hard delete; hard delete nieosiągalny z aktywnej listy
+- [x] Test: kontekst aktywny renderuje „Usuń" (archive), NIE renderuje „Usuń trwale"
+- [x] Test: kontekst archiwum renderuje „Przywróć" + „Usuń trwale"
+- [x] Test: `UsunDialog` potwierdzenie → archive; anulowanie → brak akcji
+- [x] Test: `HardDeleteDialog` przejście 3 kroków → hardDelete; anulowanie na dowolnym kroku → brak akcji
+- [ ] Test: [E2E] archiwizacja → archiwum → przywróć; 3-stopniowy hard delete; hard delete nieosiągalny z aktywnej listy (weryfikacja wizualna w /dev-docs-review)
 
 Weryfikacja:
-- [ ] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone (w tym test niedostępności hard delete z aktywnej)
-- [ ] Weryfikacja: [E2E] archiwizacja usuwa z aktywnej i pozwala przywrócić; hard delete tylko w archiwum, kasuje bezpowrotnie
+- [x] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone (w tym test niedostępności hard delete z aktywnej) — 151/151 po IU-10
+- [ ] Weryfikacja: [E2E] archiwizacja usuwa z aktywnej i pozwala przywrócić; hard delete tylko w archiwum, kasuje bezpowrotnie (weryfikacja wizualna w /dev-docs-review)
 
 ---
 
@@ -378,22 +379,22 @@ Weryfikacja:
 **Delegate to:** feature-builder-data · **Nakład:** L · **Zależności:** U4, U2, U5/U8
 
 Implementacja:
-- [ ] `src/features/projekty/hooks/useRealtimeProjekty.ts` (`channel('projekty').on('postgres_changes', {event:'*'})`, patch/invalidate cache, cleanup `removeChannel`)
-- [ ] Modyfikuj `ListaPage.tsx` (montaż subskrypcji)
-- [ ] Modyfikuj `useProjektMutations.ts` (tracking pending dla dedup, jeśli potrzebne)
-- [ ] Dedup: porównanie `updated_at` + lista pending mutation IDs (algorytm dostrajany przy wykonaniu)
-- [ ] Test (unit, start od failing integration testu dedup): `useRealtimeProjekty.test.ts` (mock kanału Supabase)
+- [x] `src/features/projekty/hooks/useRealtimeProjekty.ts` (`channel('projekty').on('postgres_changes', {event:'*'})`, invalidate cache, cleanup `removeChannel`)
+- [x] Modyfikuj `ListaPage.tsx` (montaż subskrypcji)
+- [~] Modyfikuj `useProjektMutations.ts` (tracking pending dla dedup) — **świadomie pominięte**: dedup zrobiony wyłącznie w `useRealtimeProjekty` przez `useIsMutating()` (zero couplingu, bez zmiany kontraktu hooka mutacji)
+- [x] Dedup: gdy `useIsMutating() > 0` event Realtime pomijany (echo własnej optimistic mutacji); `onSettled` mutacji sam inwaliduje po commitcie
+- [x] Test (unit, start od failing integration testu dedup): `useRealtimeProjekty.test.ts` (mock kanału Supabase)
 
 Scenariusze testowe:
-- [ ] Test: event obcego update (zmiana flagi) patchuje cache — nowa wartość widoczna
-- [ ] Test: event będący echem własnej optimistic mutacji NIE powoduje migotania / podwójnej aktualizacji
-- [ ] Test: event delete usuwa rekord z cache; insert dodaje; update `archived_at` usuwa z aktywnej listy
-- [ ] Test: subskrypcja sprzątana przy odmontowaniu (`removeChannel` wywołany)
-- [ ] Test: [E2E] dwa okna: zmiana flagi / insert / archive w jednym propaguje do drugiego bez reloadu
+- [x] Test: event obcego update (zmiana flagi) patchuje cache — nowa wartość widoczna
+- [x] Test: event będący echem własnej optimistic mutacji NIE powoduje migotania / podwójnej aktualizacji
+- [x] Test: event delete usuwa rekord z cache; insert dodaje; update `archived_at` usuwa z aktywnej listy
+- [x] Test: subskrypcja sprzątana przy odmontowaniu (`removeChannel` wywołany)
+- [ ] Test: [E2E] dwa okna: zmiana flagi / insert / archive w jednym propaguje do drugiego bez reloadu (weryfikacja wizualna w /dev-docs-review)
 
 Weryfikacja:
-- [ ] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone (w tym test dedup)
-- [ ] Weryfikacja: [E2E] zmiana flagi w jednym oknie widoczna w drugim bez ręcznego odświeżania (dwie sesje)
+- [x] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone (w tym test dedup) — 157/157 po IU-11
+- [ ] Weryfikacja: [E2E] zmiana flagi w jednym oknie widoczna w drugim bez ręcznego odświeżania (dwie sesje) (weryfikacja wizualna w /dev-docs-review)
 
 Operator:
 - [ ] Operator potwierdza w dashboardzie Supabase, że Realtime aktywny dla `projekty` (jeśli nie w U2)
@@ -404,23 +405,23 @@ Operator:
 **Delegate to:** feature-builder-ui · **Nakład:** M · **Zależności:** U5, U6, U7, U8, U10
 
 Implementacja:
-- [ ] Spójne daty względne w tabeli/kartach (`formatRelativeData`) i pełne w szczegółach (`formatDataPelna`)
-- [ ] Komplet toastów wg `DESIGN.md`: „Projekt dodany" · „ROZPISANE: TAK/NIE" · „Zmiany zapisane" · „Projekt usunięty" · „Błąd — spróbuj ponownie"
-- [ ] Empty states: brak projektów (`Inbox` → „Brak projektów" + CTA) / brak wyników (`SearchX` → „Brak projektów do pokazania" + „Pokaż wszystkie")
-- [ ] Dopięcie responsywności: `Filtry` `overflow-x:auto` na mobile; `ProjektForm` siatka 2→1; FAB pozycja nad toastem
-- [ ] Przegląd animacji (ConfirmSheet `sheetUp` 200ms, toast 160ms; bez animacji koloru flag) + `prefers-reduced-motion`
-- [ ] Test (unit): pokrycie empty states + util daty względnej (jeśli nie w U1)
+- [x] Spójne daty względne w tabeli/kartach (`formatRelativeData`) i pełne w szczegółach (`formatDataPelna`) — zweryfikowane, było już poprawne
+- [x] Komplet toastów wg `DESIGN.md`: „Projekt dodany" · „ROZPISANE: TAK/NIE" · „Zmiany zapisane" · „Projekt usunięty" · „Błąd — spróbuj ponownie" + warianty archiwum (U10); ujednolicono toast `archive` w szczegółach („Projekt przeniesiony do archiwum")
+- [x] Empty states: brak projektów (`Inbox` → „Brak projektów" + CTA) / brak wyników (`SearchX` → „Brak projektów do pokazania" + „Pokaż wszystkie") — zweryfikowane 1:1 z DESIGN.md, było poprawne
+- [x] Dopięcie responsywności: `Filtry` `overflow-x:auto` na mobile; `ProjektForm` siatka 2→1 (`md:`); FAB pozycja nad toastem (`Toaster mobileOffset bottom 84px`)
+- [x] Przegląd animacji (ConfirmSheet `sheetUp` 200ms, toast ~160ms sonner; bez animacji koloru flag) + `prefers-reduced-motion` (globalnie w `index.css`); dodano Escape=anuluj w `ConfirmSheet`
+- [x] Test (unit): empty states pokryte (z U5); +1 test Escape w `ConfirmSheet`
 
 Scenariusze testowe:
-- [ ] Test: empty „brak projektów" pokazuje CTA „+ Nowy projekt"; empty „brak wyników" pokazuje „Pokaż wszystkie"
-- [ ] Test: toggle flagi emituje toast z poprawnym labelem i stanem (TAK/NIE)
-- [ ] Test: [E2E 375px] filtry scroll poziomy, formularz 1-kolumnowy, FAB nad toastem, karty pełna szerokość
-- [ ] Test: [E2E 1280px] CTA w headerze, tabela pełna szerokość
+- [x] Test: empty „brak projektów" pokazuje CTA „+ Nowy projekt"; empty „brak wyników" pokazuje „Pokaż wszystkie" (pokryte z U5)
+- [x] Test: toggle flagi emituje toast z poprawnym labelem i stanem (TAK/NIE) (pokryte w baseline)
+- [ ] Test: [E2E 375px] filtry scroll poziomy, formularz 1-kolumnowy, FAB nad toastem, karty pełna szerokość (weryfikacja wizualna w /dev-docs-review)
+- [ ] Test: [E2E 1280px] CTA w headerze, tabela pełna szerokość (weryfikacja wizualna w /dev-docs-review)
 
 Weryfikacja:
-- [ ] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone
-- [ ] Weryfikacja: [E2E 375px] layout jednokolumnowy, FAB i filtry scroll OK (screenshot)
-- [ ] Weryfikacja: [E2E 1280px] CTA + tabela obecne; daty względne i pełne renderują się poprawnie
+- [x] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone (158/158) + `npm run build` OK
+- [ ] Weryfikacja: [E2E 375px] layout jednokolumnowy, FAB i filtry scroll OK (screenshot) (weryfikacja wizualna w /dev-docs-review)
+- [ ] Weryfikacja: [E2E 1280px] CTA + tabela obecne; daty względne i pełne renderują się poprawnie (weryfikacja wizualna w /dev-docs-review)
 
 Operator:
 - [ ] QA weryfikuje dotyk/scroll i FAB na realnym urządzeniu mobilnym (iOS + Android)

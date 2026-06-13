@@ -1,7 +1,7 @@
 # Kontekst: System zarządzania projektami odzieżowymi — MVP
 
 **Branch:** `feature/zarzadzanie-zamowieniami` (nazwa brancha zachowana dla ciągłości git)
-**Ostatnia aktualizacja:** 2026-06-13 (review Fazy 3 + poprawki P2/P3)
+**Ostatnia aktualizacja:** 2026-06-13 (Faza 4 ukończona — U10/U11/U12; MVP feature-complete)
 
 > ⚠ Koncept zmieniony 2026-06-10: z „zamówień" (pojedynczy status główny, kanban,
 > numery ZAM-XXX, terminy) na „projekty odzieżowe" (4 niezależne flagi, tabela/karty,
@@ -302,6 +302,60 @@ Raport + tabela w `review-faza-3.md` (§„Wyniki E2E na żywo"); zrzuty w `e2e-
 też fix UUID-guard (P2 #1) i round-trip custom kategorii „Inne…" (ścieżka P2 #2 — działa w praktyce).
 OSOBY w `config.ts` to nadal placeholder (Ania/Bartek/Kasia/Marek) — operator podmienia na realny zespół
 przed produkcją.
+
+### Faza 4 — Usuwanie, Realtime, polish (ukończona 2026-06-13)
+
+3 Implementation Units zrealizowane przez subagentów (strategia: **serial** — U12 zależy od U10;
+wszystkie 3 dotykały współdzielonych plików `ListaPage.tsx`/`Filtry.tsx`, równoległa edycja w jednym
+worktree groziłaby korupcją). Quality gate na koniec fazy (uruchomiony przez orkiestratora na całości):
+typecheck ✅, lint ✅, **158/158 testów** (27 plików; 128 → 158, +30), build ✅ (lazy chunki per-strona).
+**MVP feature-complete** — wszystkie 12 Units zrealizowane.
+
+**U10 — Soft delete + archiwum + 3-stopniowy hard delete (feature-builder-ui):** `UsunDialog.tsx`
+(potwierdzenie archiwizacji, wzorzec `ConfirmSheet`), `HardDeleteDialog.tsx` (danger, „Operacja
+nieodwracalna", 3 kroki klików „Usuń trwale"→„Na pewno?"→„Tak, usuń bezpowrotnie" BEZ wpisywania tekstu
+§87, stan `Krok` jako union), `useProjektAkcje.ts` (shared hook archive/restore/hardDelete + stan dialogu
+jako discriminated union). `Filtry`/`useFiltry`: wymiar `archiwum` (aktywne↔zarchiwizowane, przełącznik
+ukrywa pille flag w archiwum). `ProjektTabela`/`ProjektKarty`: akcje wg kontekstu (aktywne→„Usuń";
+archiwum→„Przywróć"+„Usuń trwale"). `SzczegolyWidok`: kosz → `UsunDialog`. Testy: +23 (151/151).
+- Toasty sukcesu w UI (hook mutacji toastuje tylko błędy): „Projekt przeniesiony do archiwum" /
+  „Projekt przywrócony" / „Projekt usunięty bezpowrotnie".
+- **Odchylenie:** `useProjektAkcje.ts` poza listą plików w checklist — ekstrakcja shared logic przy 2+
+  użyciach (coding-rules §3); przełącznik archiwum w `Filtry` jako osobny przycisk (DESIGN.md v5 nie ma
+  sekcji belki archiwum — D6 powstał później; użyto istniejących tokenów + ikona `Archive`).
+- Warstwa danych NIE wymagała zmian — `archive`/`restore`/`hardDelete` + filtr `archiwum` istniały z U4.
+
+**U11 — Supabase Realtime + dedup optimistic (feature-builder-data):** `useRealtimeProjekty.ts`
+(`channel('projekty').on('postgres_changes', {event:'*'})`, cleanup `removeChannel`), montaż w `ListaPage`.
+Testy: +6 (157/157).
+- **Decyzja dedup: invalidate, nie patch.** Każde zdarzenie inwaliduje `queryKeys.listy()` + `projekt(id)`;
+  payload Realtime nigdy nie trafia do cache jako dane (czytany tylko `id` przez `'new'/'old' in payload`
+  + `typeof === 'string'`, reszta przez normalny refetch+Zod). Uzasadnienie: przy 50–150 wierszach refetch
+  tani; chirurgiczny patch wymagałby replikacji logiki serwerowej (`ilike`/escape/filtr/sort) → źródło rozjazdu.
+- **Rozpoznanie echa własnej zmiany:** `useIsMutating() > 0` → event pomijany (optimistic trzyma prawdę,
+  `onSettled` mutacji sam inwaliduje po commitcie). Realizuje „pending mutation IDs" §85 w wersji minimalnej.
+  **`useProjektMutations` nietknięty** (zero couplingu, brak zmiany kontraktu → testy U4 bez zmian).
+- **Odchylenie:** tracking pending w `useProjektMutations` świadomie pominięty (IU note preferował niższy
+  coupling). `ListaPage.test.tsx` — dodany stub kanału Realtime (WebSocket nie idzie przez MSW REST-only;
+  mock tylko zewnętrznego transportu, zero osłabienia asercji).
+
+**U12 — Polish (feature-builder-ui):** Przegląd spójności (nie przepisywanie). Zweryfikowane jako już
+poprawne: daty (`formatRelativeData`/`formatDataPelna`), empty states (Inbox/SearchX 1:1 DESIGN.md),
+toggle-toasty, `Filtry overflow-x-auto`, `ProjektForm md:grid-cols-2`, animacje + `prefers-reduced-motion`.
+Naprawione: ujednolicony toast `archive` w szczegółach („Projekt przeniesiony do archiwum" zamiast
+„Projekt usunięty" — ta sama operacja dawała 2 różne copy); `Toaster mobileOffset bottom 84px` (toast nad
+FAB na mobile); Escape=anuluj w `ConfirmSheet` (+test, WCAG, §167/§183 — focus-trap pominięty: YAGNI).
+Testy: +1 (158/158). **Odchylenia: Brak.**
+- **Rozjazd DESIGN.md vs impl (rozwiązany):** DESIGN.md v5 powstał przed D6 (archiwum), zna tylko „Projekt
+  usunięty". Copy U10 (3 warianty: archiwum/przywrócony/bezpowrotnie) to rozszerzenie ponad źródło prawdy,
+  nie naruszenie — semantycznie poprawne (archiwizacja ≠ trwałe usunięcie). Ujednolicono wewnętrzną niespójność.
+- **Drobiazg do sprzątnięcia (poza scope):** dead token `--animate-toast-in`/`@keyframes toastIn` w `index.css`
+  (sonner używa własnych animacji ~160ms) — kandydat do usunięcia przy najbliższym sprzątaniu `@theme`.
+
+**Otwarte (E2E + operator):**
+- E2E Fazy 4 (archiwizacja→archiwum→przywróć, 3-stopniowy hard delete, Realtime dwa-okna, responsywność
+  375/1280px) — SKIP do `/dev-docs-review` na żywej bazie (Realtime dla `projekty` potwierdzony aktywny §296).
+- OSOBY w `config.ts` nadal placeholder — operator podmienia na realny zespół przed produkcją.
 
 ## Źródła
 - Specyfikacja funkcjonalna: `SPEC_projekty.md` (v5, root)
