@@ -4,8 +4,7 @@
  * Nie hardcoduj tych list w komponentach — importuj stąd.
  */
 
-export const OSOBY = ['Ania', 'Bartek', 'Kasia', 'Marek'] as const;
-// ⚠ Zmień na rzeczywiste imiona przed deploymentem.
+export const OSOBY = ['Arek', 'Krzysiek', 'Grzesiek', 'Adam'] as const;
 
 export const KATEGORIE = [
   'T-shirt',

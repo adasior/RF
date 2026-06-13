@@ -46,6 +46,6 @@ describe('config.KATEGORIE', () => {
 describe('config.OSOBY', () => {
   it('ma 4 imiona', () => {
     expect(OSOBY).toHaveLength(4);
-    expect(OSOBY).toEqual(['Ania', 'Bartek', 'Kasia', 'Marek']);
+    expect(OSOBY).toEqual(['Arek', 'Krzysiek', 'Grzesiek', 'Adam']);
   });
 });
