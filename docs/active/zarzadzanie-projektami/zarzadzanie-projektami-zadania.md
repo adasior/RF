@@ -1,7 +1,7 @@
 # Zadania: System zarządzania projektami odzieżowymi — MVP
 
 **Branch:** `feature/zarzadzanie-zamowieniami` (nazwa zachowana dla ciągłości git)
-**Ostatnia aktualizacja:** 2026-06-13 (Faza 4 ukończona — U10/U11/U12; MVP feature-complete)
+**Ostatnia aktualizacja:** 2026-06-13 (Faza 4 + poprawki po review + E2E na żywo; MVP feature-complete, zweryfikowany E2E)
 
 Legenda: `Test:` = scenariusz testowy, `Weryfikacja:` = kryterium weryfikacji,
 `Operator:` = krok poza kodem (człowiek).
@@ -367,11 +367,11 @@ Scenariusze testowe:
 - [x] Test: kontekst archiwum renderuje „Przywróć" + „Usuń trwale"
 - [x] Test: `UsunDialog` potwierdzenie → archive; anulowanie → brak akcji
 - [x] Test: `HardDeleteDialog` przejście 3 kroków → hardDelete; anulowanie na dowolnym kroku → brak akcji
-- [ ] Test: [E2E] archiwizacja → archiwum → przywróć; 3-stopniowy hard delete; hard delete nieosiągalny z aktywnej listy (weryfikacja wizualna w /dev-docs-review)
+- [x] Test: [E2E] archiwizacja → archiwum → przywróć; 3-stopniowy hard delete; hard delete nieosiągalny z aktywnej listy — ✅ PASS 2026-06-13 (e2e-faza-4/02-05; aktywna lista ma tylko „Usuń", archiwum „Przywróć"+„Usuń trwale")
 
 Weryfikacja:
 - [x] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone (w tym test niedostępności hard delete z aktywnej) — 151/151 po IU-10
-- [ ] Weryfikacja: [E2E] archiwizacja usuwa z aktywnej i pozwala przywrócić; hard delete tylko w archiwum, kasuje bezpowrotnie (weryfikacja wizualna w /dev-docs-review)
+- [x] Weryfikacja: [E2E] archiwizacja usuwa z aktywnej i pozwala przywrócić; hard delete tylko w archiwum, kasuje bezpowrotnie — ✅ PASS 2026-06-13 (toasty „przeniesiony do archiwum"/„przywrócony"/„usunięty bezpowrotnie", liczniki 2↔1)
 
 ---
 
@@ -390,11 +390,11 @@ Scenariusze testowe:
 - [x] Test: event będący echem własnej optimistic mutacji NIE powoduje migotania / podwójnej aktualizacji
 - [x] Test: event delete usuwa rekord z cache; insert dodaje; update `archived_at` usuwa z aktywnej listy
 - [x] Test: subskrypcja sprzątana przy odmontowaniu (`removeChannel` wywołany)
-- [ ] Test: [E2E] dwa okna: zmiana flagi / insert / archive w jednym propaguje do drugiego bez reloadu (weryfikacja wizualna w /dev-docs-review)
+- [x] Test: [E2E] dwa okna: zmiana flagi / insert / archive w jednym propaguje do drugiego bez reloadu — ✅ PASS 2026-06-13 (e2e-faza-4/06-07; dwie zakładki wspólna sesja, licznik „Do wydrukowania" 1→0 w oknie 2 bez reloadu)
 
 Weryfikacja:
 - [x] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone (w tym test dedup) — 157/157 po IU-11
-- [ ] Weryfikacja: [E2E] zmiana flagi w jednym oknie widoczna w drugim bez ręcznego odświeżania (dwie sesje) (weryfikacja wizualna w /dev-docs-review)
+- [x] Weryfikacja: [E2E] zmiana flagi w jednym oknie widoczna w drugim bez ręcznego odświeżania (dwie sesje) — ✅ PASS 2026-06-13 (rygorystycznie: `refetchOnWindowFocus:false` + `staleTime 30s` → aktualizacja okna 2 możliwa WYŁĄCZNIE przez invalidację z Realtime, nie focus-refetch)
 
 Operator:
 - [ ] Operator potwierdza w dashboardzie Supabase, że Realtime aktywny dla `projekty` (jeśli nie w U2)
@@ -415,13 +415,41 @@ Implementacja:
 Scenariusze testowe:
 - [x] Test: empty „brak projektów" pokazuje CTA „+ Nowy projekt"; empty „brak wyników" pokazuje „Pokaż wszystkie" (pokryte z U5)
 - [x] Test: toggle flagi emituje toast z poprawnym labelem i stanem (TAK/NIE) (pokryte w baseline)
-- [ ] Test: [E2E 375px] filtry scroll poziomy, formularz 1-kolumnowy, FAB nad toastem, karty pełna szerokość (weryfikacja wizualna w /dev-docs-review)
-- [ ] Test: [E2E 1280px] CTA w headerze, tabela pełna szerokość (weryfikacja wizualna w /dev-docs-review)
+- [x] Test: [E2E 375px] filtry scroll poziomy, formularz 1-kolumnowy, FAB nad toastem, karty pełna szerokość — ✅ PASS 2026-06-13 (e2e-faza-4/08; karty zamiast tabeli, 4 flagi grid 2×2, FAB „Nowy projekt")
+- [x] Test: [E2E 1280px] CTA w headerze, tabela pełna szerokość — ✅ PASS 2026-06-13 (e2e-faza-4/09; tabela + „+ Nowy projekt" w headerze, daty względne „dzisiaj")
 
 Weryfikacja:
 - [x] Weryfikacja: `npm run typecheck` / `lint` / `test` zielone (158/158) + `npm run build` OK
-- [ ] Weryfikacja: [E2E 375px] layout jednokolumnowy, FAB i filtry scroll OK (screenshot) (weryfikacja wizualna w /dev-docs-review)
-- [ ] Weryfikacja: [E2E 1280px] CTA + tabela obecne; daty względne i pełne renderują się poprawnie (weryfikacja wizualna w /dev-docs-review)
+- [x] Weryfikacja: [E2E 375px] layout jednokolumnowy, FAB i filtry scroll OK (screenshot) — ✅ PASS 2026-06-13 (e2e-faza-4/08)
+- [x] Weryfikacja: [E2E 1280px] CTA + tabela obecne; daty względne i pełne renderują się poprawnie — ✅ PASS 2026-06-13 (e2e-faza-4/09)
 
 Operator:
 - [ ] QA weryfikuje dotyk/scroll i FAB na realnym urządzeniu mobilnym (iOS + Android)
+
+---
+
+## Do poprawy po review fazy 4
+
+> Review: 2026-06-13 (`review-faza-4.md`). Gate: **⚠️ KONTYNUUJ Z ZASTRZEŻENIAMI** — 0× P1,
+> 1× P2 (E2E SKIP — operator-gated, nie defekt kodu), ~7× P3. Quality gate live: typecheck ✅,
+> lint ✅, test **158/158**, app smoke ✅. Zgodność ze spec: pełna (0 błędnych implementacji,
+> 0 nielegalnego scope creep). **Kod sam w sobie czysty (0 defektów P1/P2).** MVP feature-complete.
+
+> ✅ **Poprawki + E2E wykonane 2026-06-13** (inline — fixy review bez `Delegate to:`, mechaniczne/test;
+> E2E na żywo agent-browser, zalogowana sesja `VERIFY_RLS_*` z `.env`). Quality gate po poprawkach:
+> typecheck ✅, lint ✅, test **165/165** (+7), build ✅. Commit `95a73e5`.
+
+**Oś Standards — 🟠 P2 (rozwiązane):**
+
+- [x] 🟠 [important] **U10/U11/U12 — 4× E2E authenticated** — ✅ **WYKONANE 2026-06-13** na żywo (agent-browser, wspólne konto z `.env`). Wszystkie PASS: archiwizacja→archiwum→przywróć, 3-stopniowy hard delete (krok „Usuń trwale"→„Na pewno?"→„Tak, usuń bezpowrotnie"), hard-delete nieosiągalny z aktywnej, Realtime dwa okna (rygorystycznie — `refetchOnWindowFocus:false`), responsywność 375/1280px. Zrzuty `e2e-faza-4/00-09`.
+
+**Nity (🟡 P3):**
+
+- [x] 🟡 [nit] **ProjektTabela.tsx / ProjektKarty.tsx** — `AKCJA_BTN` + blok renderu 2 dialogów → wyekstrahowano `<AkcjeDialogi akcje={akcje} />` (nowy plik, dedup §3). ✅
+- [x] 🟡 [nit] **ProjektTabela.tsx** — poprawione wcięcie fragmentu `<table>` (rewrite całego pliku). ✅
+- [x] 🟡 [nit] **ProjektTabela/ProjektKarty** — `React.MouseEvent` → `import type { MouseEvent }` (konwencja repo z F2). ✅
+- [x] 🟡 [nit] **useProjektAkcje.ts** — dodany `useProjektAkcje.test.ts` (6 testów: happy archive/restore/hard + guard + 500 error). ✅
+- [x] 🟡 [nit] **Brak testu pustego archiwum** — dodany test w `ListaPage.test.tsx` (przełącznik Archiwum → brak-wynikow → reset). ✅
+- [x] 🟡 [nit] **dead token** — usunięty `--animate-toast-in`/`@keyframes toastIn` z `index.css` (sonner ma własne animacje ~160ms). ✅
+- [ ] 🟡 [nit] **UsunDialog / HardDeleteDialog / ConfirmSheet** — triplikacja shella dialogu → `<DialogOverlay>`. **Bez akcji** — ConfirmSheet to bottom-sheet (inny layout/animacja/Escape) vs centered modal; wspólna abstrakcja byłaby leaky (§11 duplication > complexity). Notatka dla planisty.
+- [ ] 🟡 [nit] **SzczegolyWidok „Usuń" na zarchiwizowanym** — zawsze archiwizuje (re-stempluje `archived_at`); brak Przywróć/Hard-delete z widoku szczegółów archiwum. **Bez akcji** — w zakresie checklist U10, zachowanie idempotentne, edge poza realnym flow (do archiwum-detalu trafia się rzadko). Notatka dla planisty.

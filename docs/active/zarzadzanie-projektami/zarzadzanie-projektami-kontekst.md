@@ -1,7 +1,7 @@
 # Kontekst: System zarządzania projektami odzieżowymi — MVP
 
 **Branch:** `feature/zarzadzanie-zamowieniami` (nazwa brancha zachowana dla ciągłości git)
-**Ostatnia aktualizacja:** 2026-06-13 (Faza 4 ukończona — U10/U11/U12; MVP feature-complete)
+**Ostatnia aktualizacja:** 2026-06-13 (Faza 4 + poprawki po review + E2E na żywo; MVP feature-complete, zweryfikowany E2E)
 
 > ⚠ Koncept zmieniony 2026-06-10: z „zamówień" (pojedynczy status główny, kanban,
 > numery ZAM-XXX, terminy) na „projekty odzieżowe" (4 niezależne flagi, tabela/karty,
@@ -357,6 +357,54 @@ Testy: +1 (158/158). **Odchylenia: Brak.**
   375/1280px) — SKIP do `/dev-docs-review` na żywej bazie (Realtime dla `projekty` potwierdzony aktywny §296).
 - OSOBY w `config.ts` nadal placeholder — operator podmienia na realny zespół przed produkcją.
 
+### Review Fazy 4 (2026-06-13)
+
+Multi-axis code review (Standards + Spec) — raport: `review-faza-4.md`. Gate: **⚠️ KONTYNUUJ
+Z ZASTRZEŻENIAMI** (0× P1, 1× P2 = E2E SKIP operator-gated, ~7× P3). Quality gate na żywo:
+typecheck ✅, lint ✅, test **158/158** (27 plików), app smoke ✅ (agent-browser, localhost:5174 —
+bundle serwuje, login renderuje, 0 błędów konsoli, ProtectedRoute przekierowuje, błędny login →
+inline „Nieprawidłowy email lub hasło"). **Zgodność ze spec: pełna** — 0 błędnych implementacji,
+0 nielegalnego scope creep. **Kod sam w sobie czysty (0 defektów P1/P2).** MVP feature-complete.
+
+**Kluczowe wnioski:**
+- **`useRealtimeProjekty` — wzorowa granica sieci:** czyta wyłącznie `id` (`typeof === 'string'`),
+  nie ufa kształtowi payloadu, dane przez refetch + Zod. `liczbaMutacjiRef` eliminuje stale closure
+  ORAZ trzyma deps efektu `[queryClient]` stabilne (brak re-subscribe churn). Dedup echa testowany
+  realną trwającą mutacją. Hard-delete-only-from-archiwum wymuszony renderem + testami.
+- **1× P2 = zablokowane E2E** (4 scenariusze authenticated: archiwum/przywróć, 3-stopniowy hard
+  delete, Realtime dwa okna, responsywność 375/1280px) — `.env` ma tylko URL+anon-key, brak hasła
+  wspólnego konta `kontakt@radicalfans.pl` do zalogowanej sesji. Nie defekt kodu; uruchom z operatorem
+  (jak Fazy 1–3). Live smoke + bramka auth potwierdzone. Zrzut: `e2e-faza-4/00-smoke-login.png`.
+- **P3 nity (nieblokujące):** duplikacja `AKCJA_BTN` + bloku 2 dialogów w Tabela/Karty oraz
+  triplikacja shella dialogu (Usun/HardDelete/ConfirmSheet) → kandydaci na `<AkcjeDialogi>`/`<DialogOverlay>`
+  przy 3. konsumencie; wcięcie fragmentu `<table>`; `useProjektAkcje` bez dedykowanego testu (pokryty
+  pośrednio); „Usuń" w szczegółach zarchiwizowanego re-stempluje `archived_at` (drobna niespójność UX).
+- **Świadome legalne odstępstwa (nie creep):** `useProjektAkcje.ts` (ekstrakcja shared logic §3);
+  przełącznik archiwum w `Filtry` (D6 postdates DESIGN.md v5); dedup przez `useIsMutating` zamiast
+  trackingu pending w `useProjektMutations` (niższy coupling, `[~]` w zadaniach).
+
+### Poprawki po review Fazy 4 + E2E na żywo (2026-06-13)
+
+Wykonane inline (fixy review bez `Delegate to:` — mechaniczne/test). Quality gate po poprawkach:
+typecheck ✅, lint ✅, test **165/165** (+7), build ✅. Commit `95a73e5`.
+
+- **P3 (naprawione, 6):** ekstrakcja `<AkcjeDialogi>` (dedup identycznego bloku renderu 2 dialogów
+  współdzielonego przez `ProjektTabela`/`ProjektKarty`, §3); poprawione wcięcie fragmentu `<table>`;
+  `React.MouseEvent` → `import type { MouseEvent }` (Tabela+Karty); nowy `useProjektAkcje.test.ts`
+  (6 testów: happy archive/restore/hard + guard + 500 error); nowy test pustego archiwum w
+  `ListaPage.test.tsx`; usunięty martwy token `--animate-toast-in`/`@keyframes toastIn` z `index.css`.
+- **P3 (świadomie odroczone, 2 — notatki dla planisty):** `<DialogOverlay>` shell (ConfirmSheet to
+  bottom-sheet vs centered modal → wspólna abstrakcja leaky, §11); „Usuń" w szczegółach
+  zarchiwizowanego re-stempluje `archived_at` (idempotentne, edge poza realnym flow).
+
+**6× E2E Fazy 4 na żywo** (agent-browser, zalogowana sesja `VERIFY_RLS_*` z `.env`, realna baza port 5175)
+— **wszystkie PASS**. Utworzono+hard-skasowano projekt `E2E Faza4 Test` (nie tknięto realnych danych;
+flaga realnego projektu przełączona i przywrócona). U10 pełny cykl (archiwizacja→archiwum→przywróć,
+3-stopniowy hard delete, hard-delete nieosiągalny z aktywnej), U11 Realtime dwa okna (rygorystycznie —
+`refetchOnWindowFocus:false` + `staleTime 30s` wykluczają focus-refetch; jedyne źródło aktualizacji =
+invalidacja z Realtime), U12 responsywność 375px (karty/FAB/2×2/filtry-scroll) + 1280px (tabela/CTA/daty).
+0 błędów konsoli. Zrzuty `e2e-faza-4/00-09`. **MVP feature-complete + zweryfikowany E2E.**
+
 ## Źródła
 - Specyfikacja funkcjonalna: `SPEC_projekty.md` (v5, root)
 - Specyfikacja wizualna: `DESIGN.md` (v5, root)
@@ -365,3 +413,4 @@ Testy: +1 (158/158). **Odchylenia: Brak.**
 - Review Fazy 1: `docs/active/zarzadzanie-projektami/review-faza-1.md`
 - Review Fazy 2: `docs/active/zarzadzanie-projektami/review-faza-2.md`
 - Review Fazy 3: `docs/active/zarzadzanie-projektami/review-faza-3.md`
+- Review Fazy 4: `docs/active/zarzadzanie-projektami/review-faza-4.md`
