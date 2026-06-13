@@ -281,11 +281,11 @@ typecheck ✅, test **127/127** (+1 nowy), lint ✅, build ✅.
   przechwytuje body; ścieżka „Tak, zmień" asertuje `toMatchObject({key: nowaWartosc})` — twardszy dowód
   kontraktu „ta sama ścieżka co desktop" (D5).
 
-**Czeka na decyzję użytkownika (P2 #2):** kolizja sentinela `'Inne…'` (`config.ts:32` = wartość listy
-ORAZ `KATEGORIA_INNE` w `ProjektForm.tsx:22`). Edycja rekordu z `kategoria='Inne…'` zablokuje submit
-mimo braku zmian — praktyczne ryzyko niskie (app nigdy nie zapisuje literału; osiągalne tylko ręcznym
-seedem). Zmiana dotyka kontraktu danych (`config.ts`) → wymaga potwierdzenia (reguła #5), NIE wykonano
-autonomicznie.
+- **P2 #2 — kolizja sentinela `'Inne…'`** (`config.ts:32` = wartość listy ORAZ `KATEGORIA_INNE`
+  w `ProjektForm.tsx`). **Decyzja użytkownika (2026-06-13): „Zostaw + udokumentuj"** — ryzyko ~zerowe
+  (apka nigdy nie zapisuje literału `'Inne…'`; rekord z `kategoria==='Inne…'` osiągalny tylko ręcznym
+  seedem DB; YAGNI §5/§10/§11 — nie kodować obrony na scenariusz niemożliwy w apce). Dodany komentarz
+  INWARIANT przy `KATEGORIA_INNE`; bez zmiany kodu/kontraktu danych ani testów.
 
 **Bez akcji (świadomie):** kategoria-pill hardcoded hexy (pre-existing U5/U6), `Header.signOut`
 bezpośrednio (pre-existing), rozbieżność copy ConfirmSheet DESIGN.md vs SPEC (impl za SPEC — poprawnie).

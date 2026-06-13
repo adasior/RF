@@ -335,7 +335,7 @@ Weryfikacja:
 **Oś Standards — 🟠 P2 (do naprawy):**
 
 - [x] 🟠 [important] **src/pages/ProjektSzczegolyPage.tsx:15-17** — `isNotFoundError` opiera się na cichym `unknown`-compare i magic stringu `'PGRST116'`. → jawny predykat `error is PostgrestError` + stała `POSTGREST_NO_ROWS`; dodana walidacja `:id` jako UUID (`isPoprawneId` z `z.string().uuid().safeParse`) → nie-UUID → 404 bez zapytania (`enabled=false`), rozwiązuje też P3 security-nit. Test: nie-UUID → 404 bez strzału do bazy. ✅
-- [ ] 🟠 [important] **src/features/projekty/components/ProjektForm.tsx:60-72 + src/lib/config.ts:32** — kolizja sentinela `'Inne…'` (wartość listy `KATEGORIE` ORAZ `KATEGORIA_INNE`): edycja rekordu z `kategoria='Inne…'` blokuje submit mimo braku zmian. Niskie prawdopodobieństwo (app nigdy nie zapisuje literału). **Decyzja produktowa — CZEKA NA POTWIERDZENIE użytkownika** (reguła #5): rozdziel sentinel (`value="__INNE__"`) vs zostaw + udokumentuj.
+- [x] 🟠 [important] **src/features/projekty/components/ProjektForm.tsx:60-72 + src/lib/config.ts:32** — kolizja sentinela `'Inne…'` (wartość listy `KATEGORIE` ORAZ `KATEGORIA_INNE`): edycja rekordu z `kategoria='Inne…'` blokuje submit mimo braku zmian. **Decyzja użytkownika (2026-06-13): „Zostaw + udokumentuj"** — ryzyko ~zerowe (apka nigdy nie zapisuje literału; YAGNI §5/§10/§11). Dodany INWARIANT w komentarzu przy `KATEGORIA_INNE`; bez zmiany kodu/kontraktu danych. ✅
 - [ ] 🟠 [important] **U7/U8/U9 — 6× weryfikacja E2E** — zablokowane na infrastrukturze operatora (`.env`/Supabase/dev server), nie defekty kodu. Uruchom po Operator TODO (kontekst §110).
 
 **Nity (🟡 P3 — opcjonalne):**

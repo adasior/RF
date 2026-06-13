@@ -18,7 +18,14 @@ export interface ProjektFormProps {
   onCancel: () => void;
 }
 
-/** Wartość-wartownik z KATEGORIE odsłaniająca input własnej kategorii (D9). */
+/**
+ * Wartownik UI z KATEGORIE odsłaniający input własnej kategorii (D9).
+ *
+ * INWARIANT: `'Inne…'` jest wyłącznie wartownikiem — `toInput()` nigdy nie zapisuje
+ * go jako `kategoria` (mapuje na wpisaną wartość `kategoriaInna`). Rekord z
+ * `kategoria === 'Inne…'` jest nieosiągalny przez apkę (tylko ręczny seed DB), więc
+ * kolizja wartownik↔wartość listy jest świadomie nieobsługiwana (review F3, P2 #2).
+ */
 const KATEGORIA_INNE = 'Inne…';
 
 /**
