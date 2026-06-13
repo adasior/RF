@@ -55,7 +55,8 @@ export function App() {
           </Suspense>
         </AuthProvider>
       </BrowserRouter>
-      <Toaster position="bottom-right" richColors />
+      {/* mobileOffset.bottom=84px → toast nad FAB (FAB: bottom 20px + 52px wys.; DESIGN.md „Toast"). */}
+      <Toaster position="bottom-right" richColors mobileOffset={{ bottom: '84px' }} />
     </QueryClientProvider>
   );
 }

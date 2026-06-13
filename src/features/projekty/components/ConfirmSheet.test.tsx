@@ -64,6 +64,16 @@ describe('ConfirmSheet', () => {
     expect(onConfirm).not.toHaveBeenCalled();
   });
 
+  it('Escape = anuluj (zamknięcie sheetu klawiaturą)', async () => {
+    const user = userEvent.setup();
+    const { onConfirm, onCancel } = renderSheet(true);
+
+    await user.keyboard('{Escape}');
+
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
   it('klik w overlay = anuluj; klik w treść sheetu NIE anuluje', async () => {
     const user = userEvent.setup();
     const { onCancel } = renderSheet(true);

@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useEffect, useId } from 'react';
 
 import { FlagBtn } from './FlagBtn';
 
@@ -17,7 +17,7 @@ interface ConfirmSheetProps {
  * Bottom sheet potwierdzenia zmiany flagi (mobile, DESIGN.md):
  * overlay (klik = anuluj) + sheet `sheetUp` 200ms (reduced-motion globalnie w index.css).
  * Tytuł „Zaznaczyć/Cofnąć flagę?", nazwa projektu, podgląd `FlagBtn` w stanie PO zmianie,
- * przyciski „Tak, zmień" / „Anuluj". Desktop NIE używa tego komponentu (toggle natychmiastowy).
+ * przyciski „Tak, zmień" / „Anuluj". Escape = anuluj. Desktop NIE używa tego komponentu (toggle natychmiastowy).
  */
 export function ConfirmSheet({
   nazwa,
@@ -27,6 +27,17 @@ export function ConfirmSheet({
   onCancel,
 }: ConfirmSheetProps) {
   const titleId = useId();
+
+  // Escape = anuluj (dostępność: modal zamykany klawiaturą). Cleanup zdejmuje listener.
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') {
+        onCancel();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onCancel]);
 
   return (
     <div
