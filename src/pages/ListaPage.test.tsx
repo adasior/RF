@@ -146,4 +146,25 @@ describe('ListaPage — stan pusty', () => {
       'false',
     );
   });
+
+  it('puste archiwum: przełącznik „Archiwum" → wariant brak-wynikow; „Pokaż wszystkie" wraca do aktywnych', async () => {
+    const user = userEvent.setup();
+    server.use(http.get(PROJEKTY_REST_URL, () => HttpResponse.json([])));
+
+    renderListaPage();
+
+    const main = await screen.findByRole('main');
+    await within(main).findByText('Brak projektów');
+
+    // Przełącz na archiwum → isFiltrAktywny → wariant brak-wynikow.
+    await user.click(screen.getByRole('button', { name: 'Archiwum' }));
+
+    expect(await within(main).findByText('Brak projektów do pokazania')).toBeInTheDocument();
+
+    // „Pokaż wszystkie" = handleResetFiltrow → setArchiwum(false) + reset → wraca do aktywnych.
+    await user.click(within(main).getByRole('button', { name: 'Pokaż wszystkie' }));
+
+    expect(await within(main).findByText('Brak projektów')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Archiwum' })).toHaveAttribute('aria-pressed', 'false');
+  });
 });

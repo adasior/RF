@@ -1,5 +1,5 @@
 import { RotateCcw, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -9,10 +9,9 @@ import type { Projekt } from '@/lib/types';
 
 import { useProjektMutations } from '@/hooks/useProjektMutations';
 
+import { AkcjeDialogi } from './AkcjeDialogi';
 import { ConfirmSheet } from './ConfirmSheet';
 import { FlagBtn } from './FlagBtn';
-import { HardDeleteDialog } from './HardDeleteDialog';
-import { UsunDialog } from './UsunDialog';
 import { useProjektAkcje } from '../hooks/useProjektAkcje';
 
 interface ProjektKartyProps {
@@ -48,7 +47,7 @@ export function ProjektKarty({ projekty, archiwum }: ProjektKartyProps) {
   const akcje = useProjektAkcje();
   const [zmiana, setZmiana] = useState<OczekujacaZmiana | null>(null);
 
-  const stopProp = (event: React.MouseEvent): void => event.stopPropagation();
+  const stopProp = (event: MouseEvent): void => event.stopPropagation();
 
   const handleConfirm = (): void => {
     if (!zmiana) {
@@ -149,22 +148,7 @@ export function ProjektKarty({ projekty, archiwum }: ProjektKartyProps) {
         />
       )}
 
-      {akcje.dialog.rodzaj === 'usun' && (
-        <UsunDialog
-          nazwa={akcje.dialog.projekt.nazwa}
-          isPending={akcje.isPending}
-          onConfirm={akcje.potwierdzUsun}
-          onCancel={akcje.zamknij}
-        />
-      )}
-      {akcje.dialog.rodzaj === 'hard' && (
-        <HardDeleteDialog
-          nazwa={akcje.dialog.projekt.nazwa}
-          isPending={akcje.isPending}
-          onConfirm={akcje.potwierdzHard}
-          onCancel={akcje.zamknij}
-        />
-      )}
+      <AkcjeDialogi akcje={akcje} />
     </>
   );
 }
