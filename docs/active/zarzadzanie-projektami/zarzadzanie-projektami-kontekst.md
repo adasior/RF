@@ -1,7 +1,7 @@
 # Kontekst: System zarządzania projektami odzieżowymi — MVP
 
 **Branch:** `feature/zarzadzanie-zamowieniami` (nazwa brancha zachowana dla ciągłości git)
-**Ostatnia aktualizacja:** 2026-06-12 (Faza 3 ukończona — U7/U8/U9)
+**Ostatnia aktualizacja:** 2026-06-13 (review Fazy 3 + poprawki P2/P3)
 
 > ⚠ Koncept zmieniony 2026-06-10: z „zamówień" (pojedynczy status główny, kanban,
 > numery ZAM-XXX, terminy) na „projekty odzieżowe" (4 niezależne flagi, tabela/karty,
@@ -264,6 +264,32 @@ zrealizowane wiernie. E2E SKIP (6×, brak `.env`/Supabase, Operator TODO §110).
   testowe (wszystkie scenariusze `Test:` z asercjami zachowania, zero shape/assertion-free testów).
 - **Pre-existing / poza zakresem F3:** kategoria-pill hardcoded hexy (U5/U6), `Header` woła `signOut` bezpośrednio,
   rozbieżność copy ConfirmSheet w DESIGN.md vs SPEC (impl poszła za SPEC — poprawnie).
+
+### Poprawki po review Fazy 3 (2026-06-13)
+
+Wykonane inline (fixy review bez `Delegate to:` — mechaniczne/testowe). Quality gate po poprawkach:
+typecheck ✅, test **127/127** (+1 nowy), lint ✅, build ✅.
+
+- **P2 #1 — `ProjektSzczegolyPage.tsx`** — `isNotFoundError` przepisany na jawny type guard
+  `error is PostgrestError` + stała `POSTGREST_NO_ROWS = 'PGRST116'` (koniec cichego `unknown`-compare
+  i magic stringu). Dodany guard `isPoprawneId` (`z.string().uuid().safeParse`) — nie-UUID `:id` → 404
+  natychmiast, zapytanie nie odpala się (`useProjektData(isId ? id : undefined)`, `enabled=false`).
+  Nowy test: `nie-uuid` → 404 bez strzału do bazy. Rozwiązuje też P3 security-nit (mylący UX dla
+  podrobionego linku).
+- **P3 — import order** w `NowyProjektPage.tsx` (`react-router-dom` przed `sonner`).
+- **P3 — asercja body PATCH (mobile)** — `trackPatch` w `ProjektKarty.test.tsx`/`SzczegolyWidok.test.tsx`
+  przechwytuje body; ścieżka „Tak, zmień" asertuje `toMatchObject({key: nowaWartosc})` — twardszy dowód
+  kontraktu „ta sama ścieżka co desktop" (D5).
+
+**Czeka na decyzję użytkownika (P2 #2):** kolizja sentinela `'Inne…'` (`config.ts:32` = wartość listy
+ORAZ `KATEGORIA_INNE` w `ProjektForm.tsx:22`). Edycja rekordu z `kategoria='Inne…'` zablokuje submit
+mimo braku zmian — praktyczne ryzyko niskie (app nigdy nie zapisuje literału; osiągalne tylko ręcznym
+seedem). Zmiana dotyka kontraktu danych (`config.ts`) → wymaga potwierdzenia (reguła #5), NIE wykonano
+autonomicznie.
+
+**Bez akcji (świadomie):** kategoria-pill hardcoded hexy (pre-existing U5/U6), `Header.signOut`
+bezpośrednio (pre-existing), rozbieżność copy ConfirmSheet DESIGN.md vs SPEC (impl za SPEC — poprawnie).
+6× E2E nadal SKIP (Operator TODO §110).
 
 ## Źródła
 - Specyfikacja funkcjonalna: `SPEC_projekty.md` (v5, root)

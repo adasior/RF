@@ -100,6 +100,24 @@ describe('ProjektSzczegolyPage', () => {
     expect(await screen.findByText('Lista projektów')).toBeInTheDocument();
   });
 
+  it('niepoprawny (nie-UUID) :id → strona 404 bez odpytywania bazy', async () => {
+    const tracker = { odpytano: false };
+    server.use(
+      http.get(PROJEKTY_REST_URL, () => {
+        tracker.odpytano = true;
+        return HttpResponse.json(projektFixture());
+      }),
+    );
+
+    renderPage('nie-uuid');
+
+    expect(
+      await screen.findByRole('heading', { name: 'Nie znaleziono projektu' }),
+    ).toBeInTheDocument();
+    // UUID guard zatrzymuje zapytanie (enabled=false) — brak strzału do bazy.
+    expect(tracker.odpytano).toBe(false);
+  });
+
   it('inny błąd niż 404 → komunikat błędu, NIE strona 404', async () => {
     server.use(
       http.get(PROJEKTY_REST_URL, () =>

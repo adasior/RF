@@ -63,12 +63,16 @@ function renderKarty(projekty: Projekt[]) {
   return render(<ProjektKarty projekty={projekty} />, { wrapper: Wrapper });
 }
 
-/** Rejestruje handler PATCH i zwraca obiekt śledzący, czy mutacja poszła do API. */
-function trackPatch(): { wyslany: boolean } {
-  const tracker = { wyslany: false };
+/** Rejestruje handler PATCH i zwraca obiekt śledzący fakt mutacji oraz wysłane body. */
+function trackPatch(): { wyslany: boolean; body: Record<string, unknown> | null } {
+  const tracker: { wyslany: boolean; body: Record<string, unknown> | null } = {
+    wyslany: false,
+    body: null,
+  };
   server.use(
-    http.patch(PROJEKTY_REST_URL, () => {
+    http.patch(PROJEKTY_REST_URL, async ({ request }) => {
       tracker.wyslany = true;
+      tracker.body = (await request.json()) as Record<string, unknown>;
       return HttpResponse.json([], { status: 204 });
     }),
   );
@@ -136,6 +140,8 @@ describe('ProjektKarty', () => {
     await user.click(screen.getByRole('button', { name: 'Tak, zmień' }));
 
     await waitFor(() => expect(patch.wyslany).toBe(true));
+    // Ta sama ścieżka co desktop: PATCH ustawia dokładnie tę flagę na nową wartość.
+    expect(patch.body).toMatchObject({ rozpisane: true });
     expect(toastFn).toHaveBeenCalledWith('ROZPISANE: TAK');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });

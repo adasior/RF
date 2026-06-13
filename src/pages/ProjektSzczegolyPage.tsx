@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
+import { z } from 'zod';
 
 import { useProjektData } from '@/hooks/useProjektData';
 import { useProjektMutations } from '@/hooks/useProjektMutations';
@@ -11,9 +12,26 @@ import { SzczegolyWidok } from '@/features/projekty/components/SzczegolyWidok';
 
 import { NotFoundPage } from './NotFoundPage';
 
-/** PostgREST: `.single()` bez wiersza → błąd o kodzie PGRST116 (= projekt nie istnieje). */
-function isNotFoundError(error: Error): boolean {
-  return 'code' in error && error.code === 'PGRST116';
+/** Kod błędu PostgREST dla `.single()` bez wiersza (= projekt nie istnieje). */
+const POSTGREST_NO_ROWS = 'PGRST116';
+
+interface PostgrestError {
+  code: string;
+}
+
+/** Type guard: błąd PostgREST „brak wiersza" → projekt nie istnieje (404), nie błąd przejściowy. */
+function isNotFoundError(error: unknown): error is PostgrestError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    error.code === POSTGREST_NO_ROWS
+  );
+}
+
+/** `:id` z URL musi być UUID — nie-UUID nie wskaże realnego projektu (404 bez zapytania). */
+function isPoprawneId(id: string | undefined): boolean {
+  return id !== undefined && z.string().uuid().safeParse(id).success;
 }
 
 /**
@@ -28,8 +46,19 @@ export function ProjektSzczegolyPage() {
   const navigate = useNavigate();
   const [isEdycja, setIsEdycja] = useState(false);
 
-  const { data: projekt, isLoading, error } = useProjektData(id);
+  const isId = isPoprawneId(id);
+  const { data: projekt, isLoading, error } = useProjektData(isId ? id : undefined);
   const { update, archive } = useProjektMutations();
+
+  // Niepoprawny/nie-UUID :id → 404 od razu (zapytanie nie odpala się dzięki enabled).
+  if (!isId) {
+    return (
+      <NotFoundPage
+        tytul="Nie znaleziono projektu"
+        opis="Projekt nie istnieje albo został usunięty."
+      />
+    );
+  }
 
   if (isLoading) {
     return (
