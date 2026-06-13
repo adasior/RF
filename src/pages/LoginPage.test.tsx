@@ -1,7 +1,10 @@
+import type { Session } from '@supabase/supabase-js';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { AuthContext } from '@/components/auth-context';
 import { LoginPage } from '@/pages/LoginPage';
 
 const signInWithPassword = vi.fn();
@@ -14,6 +17,20 @@ vi.mock('@/lib/supabase', () => ({
     },
   },
 }));
+
+/** Renderuje LoginPage w kontekście sesji + routerze (LoginPage używa useAuth + Navigate). */
+function renderLogin(session: Session | null = null) {
+  return render(
+    <AuthContext.Provider value={{ session, isLoading: false }}>
+      <MemoryRouter initialEntries={['/login']}>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/" element={<div>Lista projektów</div>} />
+        </Routes>
+      </MemoryRouter>
+    </AuthContext.Provider>,
+  );
+}
 
 async function fillAndSubmit(): Promise<void> {
   const user = userEvent.setup();
@@ -28,7 +45,7 @@ describe('LoginPage', () => {
   });
 
   it('submit z pustymi polami: komunikat „Podaj email i hasło", auth NIE wywołane', async () => {
-    render(<LoginPage />);
+    renderLogin();
 
     // jsdom blokuje klik submitu przez natywne `required` — dispatch submit
     // bezpośrednio, by pokryć guard `!email || !password` w loginAction.
@@ -44,7 +61,7 @@ describe('LoginPage', () => {
   it('pokazuje inline błąd PL gdy auth odrzuca logowanie', async () => {
     signInWithPassword.mockResolvedValue({ error: { message: 'Invalid login credentials' } });
 
-    render(<LoginPage />);
+    renderLogin();
     await fillAndSubmit();
 
     const alert = await screen.findByRole('alert');
@@ -54,7 +71,7 @@ describe('LoginPage', () => {
   it('wywołuje signInWithPassword z podanymi danymi i nie pokazuje błędu przy sukcesie', async () => {
     signInWithPassword.mockResolvedValue({ error: null });
 
-    render(<LoginPage />);
+    renderLogin();
     await fillAndSubmit();
 
     expect(signInWithPassword).toHaveBeenCalledWith({
@@ -62,5 +79,15 @@ describe('LoginPage', () => {
       password: 'tajne123',
     });
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('z istniejącą sesją przekierowuje na / (regresja: po zalogowaniu nie zostaje na /login)', () => {
+    const session = { access_token: 'abc', user: { id: '1' } } as unknown as Session;
+
+    renderLogin(session);
+
+    expect(screen.getByText('Lista projektów')).toBeInTheDocument();
+    // Formularz logowania nie jest renderowany, gdy sesja istnieje.
+    expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
   });
 });

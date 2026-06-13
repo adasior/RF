@@ -1,6 +1,8 @@
 import { Loader2 } from 'lucide-react';
 import { useActionState } from 'react';
+import { Navigate } from 'react-router-dom';
 
+import { useAuth } from '@/components/auth-context';
 import { supabase } from '@/lib/supabase';
 
 const BLAD_LOGOWANIA = 'Nieprawidłowy email lub hasło';
@@ -34,7 +36,13 @@ async function loginAction(_prev: LoginState, formData: FormData): Promise<Login
  * Brak rejestracji/resetu — tylko logowanie (decyzja D3).
  */
 export function LoginPage() {
+  const { session } = useAuth();
   const [state, formAction, isPending] = useActionState(loginAction, initialState);
+
+  // Sesja istnieje (po zalogowaniu lub wejściu na /login będąc zalogowanym) → na listę.
+  if (session) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-bg p-6">
