@@ -242,6 +242,29 @@ Quality gate po poprawkach: typecheck ✅, test **85/85** (16 plików; 69 → 85
 
 **Świadomie bez akcji:** podwójny `useProjektyData` (D10 — rewizja przy U8), szerokości kolumn z DESIGN.md (kosmetyka), `useLiczniki`, `szukaj` w queryKeys, `<search>` jsdom warning, async `handleSignOut` bez await. RLS hardening → Operator TODO pkt 5 (wyłączyć publiczne signups). E2E Fazy 1 i 2 nadal SKIP — blokada na Operator TODO §110.
 
+### Review Fazy 3 (2026-06-13)
+
+Multi-axis code review (Standards + Spec) — raport: `review-faza-3.md`. Gate: **⚠️ KONTYNUUJ
+Z ZASTRZEŻENIAMI** (0× P1, 2× P2 Standards + 0× P2 Spec, ~8× P3). Quality gate zweryfikowany
+na żywo: typecheck/lint czyste, test **126/126** (24 pliki), build OK. **Zgodność ze spec: pełna** —
+0 błędnych implementacji; podgląd flagi PO zmianie, data pełna w szczegółach, „PRZESŁANY HAFT/SITO",
+edycja bez flag (asercja `not.toHaveProperty('rozpisane')`), 4× false dla nowego projektu, „Inne…"→input
+zrealizowane wiernie. E2E SKIP (6×, brak `.env`/Supabase, Operator TODO §110).
+
+**Kluczowe wnioski (do naprawy — nie blokują Fazy 4):**
+- **`isNotFoundError`** (`ProjektSzczegolyPage.tsx:15-17`) — guard na cichym `unknown`-compare + magic
+  string `'PGRST116'`; jawny predykat `error is PostgrestLikeError` + stała + walidacja `:id` jako UUID
+  (rozwiązuje też nit: nie-UUID → 404 zamiast generycznego błędu).
+- **Kolizja sentinela `'Inne…'`** — wartość jest jednocześnie elementem `KATEGORIE` (config.ts:32) i wartownikiem
+  `KATEGORIA_INNE`; edycja rekordu z `kategoria='Inne…'` blokuje submit mimo braku zmian. Praktyczne ryzyko niskie
+  (app nigdy nie zapisuje literału). **Decyzja produktowa** — rozdzielić sentinel (`value="__INNE__"`); potwierdzić
+  przed zmianą.
+- **Czysto:** security (0 XSS, PII auto-escaping, edycja nie dotyka flag, zero `console.*`), performance
+  (lazy chunki per-strona zweryfikowane, ConfirmSheet bez timerów, mikro-nity = YAGNI dla 50–150), pokrycie
+  testowe (wszystkie scenariusze `Test:` z asercjami zachowania, zero shape/assertion-free testów).
+- **Pre-existing / poza zakresem F3:** kategoria-pill hardcoded hexy (U5/U6), `Header` woła `signOut` bezpośrednio,
+  rozbieżność copy ConfirmSheet w DESIGN.md vs SPEC (impl poszła za SPEC — poprawnie).
+
 ## Źródła
 - Specyfikacja funkcjonalna: `SPEC_projekty.md` (v5, root)
 - Specyfikacja wizualna: `DESIGN.md` (v5, root)
@@ -249,3 +272,4 @@ Quality gate po poprawkach: typecheck ✅, test **85/85** (16 plików; 69 → 85
 - Zadania: `docs/active/zarzadzanie-projektami/zarzadzanie-projektami-zadania.md`
 - Review Fazy 1: `docs/active/zarzadzanie-projektami/review-faza-1.md`
 - Review Fazy 2: `docs/active/zarzadzanie-projektami/review-faza-2.md`
+- Review Fazy 3: `docs/active/zarzadzanie-projektami/review-faza-3.md`

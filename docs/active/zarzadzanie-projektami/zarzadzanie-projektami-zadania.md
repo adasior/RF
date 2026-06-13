@@ -324,6 +324,27 @@ Weryfikacja:
 
 ---
 
+## Do poprawy po review fazy 3
+
+> Review: 2026-06-13 (`review-faza-3.md`). Gate: **⚠️ KONTYNUUJ Z ZASTRZEŻENIAMI** — 0× P1, 2× P2 (oba arch/TS).
+> Quality gate zweryfikowany na żywo: typecheck ✅, test **126/126**, lint ✅. Zgodność ze spec: pełna (0 błędnych implementacji, 2 niegroźne scope-creepy polish).
+
+**Oś Standards — 🟠 P2 (do naprawy):**
+
+- [ ] 🟠 [important] **src/pages/ProjektSzczegolyPage.tsx:15-17** — `isNotFoundError` opiera się na cichym `unknown`-compare i magic stringu `'PGRST116'`. → jawny predykat `error is PostgrestLikeError` + stała `POSTGREST_NO_ROWS`; przy okazji walidacja `:id` jako UUID (`z.string().uuid().safeParse`) → rozwiązuje też P3 security-nit (nie-UUID → 404 zamiast generycznego błędu).
+- [ ] 🟠 [important] **src/features/projekty/components/ProjektForm.tsx:60-72 + src/lib/config.ts:32** — kolizja sentinela `'Inne…'` (wartość listy `KATEGORIE` ORAZ `KATEGORIA_INNE`): edycja rekordu z `kategoria='Inne…'` blokuje submit mimo braku zmian. Niskie prawdopodobieństwo (app nigdy nie zapisuje literału). **Decyzja produktowa** — rozdziel sentinel (`value="__INNE__"`) od wartości listy; potwierdź przed zmianą (reguła #5).
+- [ ] 🟠 [important] **U7/U8/U9 — 6× weryfikacja E2E** — zablokowane na infrastrukturze operatora (`.env`/Supabase/dev server), nie defekty kodu. Uruchom po Operator TODO (kontekst §110).
+
+**Nity (🟡 P3 — opcjonalne):**
+
+- [ ] 🟡 [nit] **src/pages/NowyProjektPage.tsx:1-2** — kolejność importów third-party (`sonner` przed `react-router-dom`).
+- [ ] 🟡 [nit] **ProjektKarty.test.tsx / SzczegolyWidok.test.tsx** — ścieżka mobile „Tak, zmień" asertuje fakt PATCH, nie treść body (`{key: nowaWartosc}`) — mocniejsza asercja kontraktu „ta sama ścieżka co desktop".
+- [ ] 🟡 [nit] **kategoria-pill (SzczegolyWidok/ProjektKarty/ProjektTabela)** — hardcodowane hexy 3×, nie tokeny `@theme`. Pre-existing z U5/U6 — token `--color-pill-*` + `<KategoriaPill>` poza zakresem F3.
+- [ ] 🟡 [nit] **src/components/Header.tsx:22** — `Header` woła `supabase.auth.signOut()` bezpośrednio (warstwa serwisu w komponencie). Pre-existing — przenieść do `useAuth().signOut()` przy okazji.
+- [ ] 🟡 [nit] **DESIGN.md:300 vs SPEC:189** — rozbieżność copy przycisku ConfirmSheet („Potwierdź" vs „Tak, zmień"); impl poszła za SPEC (poprawnie). Ujednolicić źródła.
+
+---
+
 ## Faza 4 — Usuwanie, Realtime, polish
 
 ### Unit 10: Soft delete + archiwum + przywracanie + 3-stopniowy hard delete
