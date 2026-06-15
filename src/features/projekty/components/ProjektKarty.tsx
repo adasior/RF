@@ -77,11 +77,11 @@ export function ProjektKarty({ projekty, archiwum }: ProjektKartyProps) {
               isKompletny(projekt) ? 'opacity-40' : ''
             }`}
           >
-            <div className="mb-1 flex items-center justify-between">
-              <span className="whitespace-nowrap rounded-pill border border-[#DDD7CC] bg-[#F0EDE7] px-[9px] py-[3px] text-[9px] font-medium text-[#6B6354]">
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <span className="min-w-0 truncate rounded-pill border border-[#DDD7CC] bg-[#F0EDE7] px-[9px] py-[3px] text-[9px] font-medium text-[#6B6354]">
                 {projekt.kategoria}
               </span>
-              <span className="whitespace-nowrap text-[10px] text-text-meta">
+              <span className="shrink-0 whitespace-nowrap text-[10px] text-text-meta">
                 {formatRelativeData(projekt.created_at)}
               </span>
             </div>
