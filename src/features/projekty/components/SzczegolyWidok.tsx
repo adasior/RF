@@ -61,7 +61,7 @@ export function SzczegolyWidok({ projekt, onEdytuj, onUsun, isUsuwanie }: Szczeg
       { id: projekt.id, key: flaga.key, nowaWartosc },
       {
         onSuccess: () => {
-          toast(`${flaga.label}: ${nowaWartosc ? 'TAK' : 'NIE'}`);
+          toast(`${projekt.nazwa} — ${flaga.label}: ${nowaWartosc ? 'TAK' : 'NIE'}`);
         },
         // Toast błędu i rollback obsługuje sam hook mutacji (bez re-throw).
       },

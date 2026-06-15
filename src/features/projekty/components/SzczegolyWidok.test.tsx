@@ -155,7 +155,7 @@ describe('SzczegolyWidok', () => {
     await user.click(screen.getByRole('button', { name: 'SPRAWDZONY' }));
 
     await waitFor(() => expect(patch.wyslany).toBe(true));
-    expect(toastFn).toHaveBeenCalledWith('SPRAWDZONY: TAK');
+    expect(toastFn).toHaveBeenCalledWith('Tshirty Piast Anty KSG — SPRAWDZONY: TAK');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
@@ -178,7 +178,7 @@ describe('SzczegolyWidok', () => {
     await waitFor(() => expect(patch.wyslany).toBe(true));
     // Ta sama ścieżka co desktop: PATCH ustawia dokładnie tę flagę na nową wartość.
     expect(patch.body).toMatchObject({ sprawdzony: true });
-    expect(toastFn).toHaveBeenCalledWith('SPRAWDZONY: TAK');
+    expect(toastFn).toHaveBeenCalledWith('Tshirty Piast Anty KSG — SPRAWDZONY: TAK');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 

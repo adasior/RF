@@ -47,9 +47,7 @@ export function LoginPage() {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-bg p-6">
       <div className="w-full max-w-sm rounded-card border border-border bg-surface p-6">
-        <span className="font-serif text-lg italic text-text-primary">
-          Pracownia <span className="text-accent">·</span> projekty
-        </span>
+        <span className="font-serif text-lg italic text-text-primary">Manager projektów</span>
 
         <form action={formAction} className="mt-6 flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">

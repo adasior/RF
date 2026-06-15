@@ -18,7 +18,7 @@ function renderSegmented(value = '', onChange = vi.fn()) {
 
 describe('OsobaSegmented', () => {
   it('renderuje radiogroup z wszystkimi osobami z OSOBY i zaznacza wybraną', () => {
-    renderSegmented('Kasia');
+    renderSegmented(OSOBY[0]);
 
     const group = screen.getByRole('radiogroup', { name: 'Dodał' });
     const radios = screen.getAllByRole('radio');
@@ -28,17 +28,17 @@ describe('OsobaSegmented', () => {
     OSOBY.forEach((osoba) => {
       expect(screen.getByRole('radio', { name: osoba })).toBeInTheDocument();
     });
-    expect(screen.getByRole('radio', { name: 'Kasia' })).toBeChecked();
-    expect(screen.getByRole('radio', { name: 'Ania' })).not.toBeChecked();
+    expect(screen.getByRole('radio', { name: OSOBY[0] })).toBeChecked();
+    expect(screen.getByRole('radio', { name: OSOBY[1] })).not.toBeChecked();
   });
 
   it('klik w osobę wywołuje onChange z jej imieniem', async () => {
     const user = userEvent.setup();
-    const onChange = renderSegmented('Ania');
+    const onChange = renderSegmented(OSOBY[0]);
 
-    await user.click(screen.getByRole('radio', { name: 'Marek' }));
+    await user.click(screen.getByRole('radio', { name: OSOBY[1] }));
 
-    expect(onChange).toHaveBeenCalledWith('Marek');
+    expect(onChange).toHaveBeenCalledWith(OSOBY[1]);
   });
 
   it('obsługuje klawiaturę: strzałka w prawo zaznacza następną osobę (wzorzec radiogroup)', async () => {

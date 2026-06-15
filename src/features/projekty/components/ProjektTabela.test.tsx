@@ -109,7 +109,7 @@ describe('ProjektTabela', () => {
     await user.click(screen.getByRole('button', { name: /rozpisane/i }));
 
     await waitFor(() => expect(patchWyslany).toBe(true));
-    expect(toastFn).toHaveBeenCalledWith('ROZPISANE: TAK');
+    expect(toastFn).toHaveBeenCalledWith('Koszulka klubowa — ROZPISANE: TAK');
   });
 
   it('podczas trwającej mutacji przyciski flag są disabled (ochrona przed double-click)', async () => {

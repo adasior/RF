@@ -51,7 +51,7 @@ export function ProjektTabela({ projekty, archiwum }: ProjektTabelaProps) {
         { id: projekt.id, key, nowaWartosc },
         {
           onSuccess: () => {
-            toast(`${label}: ${nowaWartosc ? 'TAK' : 'NIE'}`);
+            toast(`${projekt.nazwa} — ${label}: ${nowaWartosc ? 'TAK' : 'NIE'}`);
           },
           // Toast błędu i rollback obsługuje sam hook mutacji (bez re-throw).
         },

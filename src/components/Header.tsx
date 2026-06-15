@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase';
 
 import { useIsMobile } from '@/features/projekty/hooks/useIsMobile';
 
+import rfLogo from '@/assets/rf_logo.jpg';
+
 import { Fab } from './Fab';
 
 /**
@@ -30,8 +32,13 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 flex h-14 items-center justify-between border-b border-border bg-surface px-5">
-      <span className="font-serif text-lg italic text-text-primary">
-        Pracownia <span className="text-accent">·</span> projekty
+      <span className="flex items-center gap-2.5">
+        <img
+          src={rfLogo}
+          alt="Logo RF"
+          className="h-8 w-8 shrink-0 rounded-flag object-contain"
+        />
+        <span className="font-serif text-lg italic text-text-primary">Manager projektów</span>
       </span>
       <div className="flex items-center gap-2">
         {isMobile ? (

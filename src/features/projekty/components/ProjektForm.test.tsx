@@ -2,6 +2,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
+import { OSOBY } from '@/lib/config';
+
 import { ProjektForm, type ProjektFormProps } from './ProjektForm';
 
 function renderForm(over: Partial<ProjektFormProps> = {}) {
@@ -40,7 +42,7 @@ describe('ProjektForm — walidacja', () => {
 
     await user.type(screen.getByLabelText(/nazwa projektu/i), 'Bluzy dla klubu');
     await user.selectOptions(screen.getByLabelText(/kategoria/i), 'Inne…');
-    await user.click(screen.getByRole('radio', { name: 'Ania' }));
+    await user.click(screen.getByRole('radio', { name: OSOBY[0] }));
     await user.click(screen.getByRole('button', { name: 'Zapisz projekt' }));
 
     expect(await screen.findByText('Podaj kategorię')).toBeInTheDocument();
@@ -60,13 +62,13 @@ describe('ProjektForm — kategoria „Inne…" (D9)', () => {
 
     await user.type(screen.getByLabelText(/nazwa projektu/i), 'Sztandar');
     await user.type(wlasna, 'Sztandar haftowany');
-    await user.click(screen.getByRole('radio', { name: 'Bartek' }));
+    await user.click(screen.getByRole('radio', { name: OSOBY[0] }));
     await user.click(screen.getByRole('button', { name: 'Zapisz projekt' }));
 
     expect(onSubmit).toHaveBeenCalledWith({
       nazwa: 'Sztandar',
       kategoria: 'Sztandar haftowany',
-      dodal: 'Bartek',
+      dodal: OSOBY[0],
       kontakt: null,
       uwagi: null,
     });
@@ -81,14 +83,14 @@ describe('ProjektForm — poprawny submit', () => {
     await user.type(screen.getByLabelText(/nazwa projektu/i), 'Koszulki firmowe');
     await user.selectOptions(screen.getByLabelText(/kategoria/i), 'T-shirt');
     await user.type(screen.getByLabelText(/kontakt/i), 'jan@firma.pl');
-    await user.click(screen.getByRole('radio', { name: 'Kasia' }));
+    await user.click(screen.getByRole('radio', { name: OSOBY[0] }));
     await user.click(screen.getByRole('button', { name: 'Zapisz projekt' }));
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(onSubmit).toHaveBeenCalledWith({
       nazwa: 'Koszulki firmowe',
       kategoria: 'T-shirt',
-      dodal: 'Kasia',
+      dodal: OSOBY[0],
       kontakt: 'jan@firma.pl',
       uwagi: null,
     });
@@ -112,7 +114,7 @@ describe('ProjektForm — mode=edit (reuse w U9)', () => {
       defaultValues: {
         nazwa: 'Sztandar',
         kategoria: 'Sztandar haftowany',
-        dodal: 'Marek',
+        dodal: OSOBY[0],
         kontakt: 'klub@example.com',
         uwagi: 'Pilne',
       },
@@ -121,7 +123,7 @@ describe('ProjektForm — mode=edit (reuse w U9)', () => {
     expect(screen.getByLabelText(/nazwa projektu/i)).toHaveValue('Sztandar');
     expect(screen.getByLabelText(/^kategoria/i)).toHaveValue('Inne…');
     expect(screen.getByLabelText(/własna kategoria/i)).toHaveValue('Sztandar haftowany');
-    expect(screen.getByRole('radio', { name: 'Marek' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: OSOBY[0] })).toBeChecked();
     expect(screen.getByLabelText(/kontakt/i)).toHaveValue('klub@example.com');
     expect(screen.getByLabelText(/uwagi/i)).toHaveValue('Pilne');
     expect(screen.getByRole('button', { name: 'Zapisz zmiany' })).toBeInTheDocument();

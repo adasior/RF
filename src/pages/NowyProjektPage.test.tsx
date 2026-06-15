@@ -5,6 +5,7 @@ import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { OSOBY } from '@/lib/config';
 import { PROJEKTY_REST_URL, server } from '@/test/msw-server';
 
 import { NowyProjektPage } from './NowyProjektPage';
@@ -39,7 +40,7 @@ function renderPage() {
 async function wypelnijFormularz(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText(/nazwa projektu/i), 'Koszulki firmowe');
   await user.selectOptions(screen.getByLabelText(/kategoria/i), 'T-shirt');
-  await user.click(screen.getByRole('radio', { name: 'Ania' }));
+  await user.click(screen.getByRole('radio', { name: OSOBY[0] }));
   await user.click(screen.getByRole('button', { name: 'Zapisz projekt' }));
 }
 
@@ -65,7 +66,7 @@ describe('NowyProjektPage', () => {
             wydrukowany: false,
             kontakt: null,
             uwagi: null,
-            dodal: 'Ania',
+            dodal: OSOBY[0],
             archived_at: null,
             created_at: '2026-06-12T10:00:00Z',
             updated_at: '2026-06-12T10:00:00Z',
@@ -83,7 +84,7 @@ describe('NowyProjektPage', () => {
     expect(holder.body).toMatchObject({
       nazwa: 'Koszulki firmowe',
       kategoria: 'T-shirt',
-      dodal: 'Ania',
+      dodal: OSOBY[0],
       rozpisane: false,
       przeslany: false,
       sprawdzony: false,

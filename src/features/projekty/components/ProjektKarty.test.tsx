@@ -144,7 +144,7 @@ describe('ProjektKarty', () => {
     await waitFor(() => expect(patch.wyslany).toBe(true));
     // Ta sama ścieżka co desktop: PATCH ustawia dokładnie tę flagę na nową wartość.
     expect(patch.body).toMatchObject({ rozpisane: true });
-    expect(toastFn).toHaveBeenCalledWith('ROZPISANE: TAK');
+    expect(toastFn).toHaveBeenCalledWith('Koszulka klubowa — ROZPISANE: TAK');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
