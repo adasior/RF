@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ComponentProps } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Projekt } from '@/lib/types';
@@ -31,7 +32,36 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
+
+/** Stubuje `window.matchMedia` ze sterowanym `matches` (mobile vs desktop). */
+function stubMatchMedia(matches: boolean): void {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn().mockReturnValue({
+      matches,
+      media: '(max-width: 767px)',
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    } as unknown as MediaQueryList),
+  );
+}
+
+function renderFiltry(over: Partial<ComponentProps<typeof Filtry>> = {}) {
+  const props = {
+    projekty: [] as Projekt[],
+    flagaAktywna: undefined,
+    szukaj: '',
+    archiwum: false,
+    onFlagaChange: vi.fn(),
+    onSzukajChange: vi.fn(),
+    onArchiwumChange: vi.fn(),
+    ...over,
+  };
+  render(<Filtry {...props} />);
+  return props;
+}
 
 describe('Filtry', () => {
   it('renderuje 5 filtrów: Wszystkie + 4 z config (filterLabel)', () => {
@@ -249,5 +279,59 @@ describe('Filtry', () => {
     await user.click(screen.getByRole('button', { name: /pokaż aktywne/i }));
 
     expect(onArchiwumChange).toHaveBeenCalledWith(false);
+  });
+});
+
+describe('Filtry — mobile (rozwijane menu)', () => {
+  it('zwija filtry flagowe do triggera z aktywnym filtrem; lista ukryta dopóki nie rozwinięta', () => {
+    stubMatchMedia(true);
+    renderFiltry({ projekty: [projektFixture()], flagaAktywna: undefined });
+
+    // Trigger pokazuje aktywny filtr („Wszystkie") i jest zwinięty.
+    const trigger = screen.getByRole('button', { name: /wszystkie/i });
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    // Pozostałe filtry flagowe nie są renderowane przed rozwinięciem.
+    expect(screen.queryByRole('button', { name: /do rozpisania/i })).not.toBeInTheDocument();
+  });
+
+  it('klik triggera rozwija menu z 5 pozycjami; wybór wywołuje onFlagaChange i zamyka menu', async () => {
+    const user = userEvent.setup();
+    stubMatchMedia(true);
+    const { onFlagaChange } = renderFiltry({ flagaAktywna: undefined });
+
+    await user.click(screen.getByRole('button', { name: /wszystkie/i }));
+
+    // Po rozwinięciu widoczne są wszystkie pozycje flagowe.
+    expect(screen.getByRole('button', { name: /do rozpisania/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /do wydrukowania/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /do sprawdzenia/i }));
+
+    expect(onFlagaChange).toHaveBeenCalledWith('sprawdzony');
+    // Menu zamyka się po wyborze.
+    expect(screen.queryByRole('button', { name: /do sprawdzenia/i })).not.toBeInTheDocument();
+  });
+
+  it('Escape zamyka rozwinięte menu', async () => {
+    const user = userEvent.setup();
+    stubMatchMedia(true);
+    renderFiltry({ flagaAktywna: undefined });
+
+    await user.click(screen.getByRole('button', { name: /wszystkie/i }));
+    expect(screen.getByRole('button', { name: /do rozpisania/i })).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+
+    expect(screen.queryByRole('button', { name: /do rozpisania/i })).not.toBeInTheDocument();
+  });
+
+  it('trigger odzwierciedla aktywny filtr flagowy (np. „Do sprawdzenia")', () => {
+    stubMatchMedia(true);
+    renderFiltry({ flagaAktywna: 'sprawdzony', projekty: [projektFixture({ sprawdzony: false })] });
+
+    // Trigger pokazuje aktywny filtr; lista pozostaje zwinięta.
+    const trigger = screen.getByRole('button', { name: /do sprawdzenia/i });
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('button', { name: /do rozpisania/i })).not.toBeInTheDocument();
   });
 });
